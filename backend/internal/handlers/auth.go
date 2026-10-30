@@ -159,7 +159,7 @@ func Login(c *gin.Context) {
 	}
 	loginSucceeded(username)
 
-	token, err := middleware.GenerateToken(user.ID, user.Name, string(user.Role))
+	token, err := middleware.GenerateToken(user.ID, user.Name, string(user.Role), user.TokenVersion)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token yaratishda xato"})
 		return
@@ -300,7 +300,7 @@ func Register(c *gin.Context) {
 		log.Printf("Yangi o'quvchi (%d) uchun boshlang'ich ma'lumotlar to'liq yaratilmadi: %v", newUser.ID, err)
 	}
 
-	token, err := middleware.GenerateToken(newUser.ID, newUser.Name, string(newUser.Role))
+	token, err := middleware.GenerateToken(newUser.ID, newUser.Name, string(newUser.Role), newUser.TokenVersion)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token yaratishda xato"})
 		return
@@ -350,11 +350,14 @@ func SetStudentCredentials(c *gin.Context) {
 		return
 	}
 	updates["password"] = string(hash)
+	// Yangi parol berildi — o'quvchining eski tokenlari (masalan, begona qurilmada) bekor bo'ladi
+	updates["token_version"] = gorm.Expr("token_version + 1")
 
 	if err := database.DB.Model(&student).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Saqlashda xato"})
 		return
 	}
+	middleware.ForgetUser(student.ID)
 	database.DB.First(&student, student.ID)
 	c.JSON(http.StatusOK, gin.H{"username": usernameOf(student), "hasPassword": true})
 }

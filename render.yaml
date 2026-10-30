@@ -26,10 +26,14 @@ services:
       - key: ALLOWED_ORIGINS
         fromService:
           type: web
-          name: cyberai-frontend
+          name: cyber-learn
           property: host
       - key: TEACHER_USERNAME
         value: teacher
+      # O'qituvchi paroli (kamida 8 belgi). Render → Environment'da o'zgartirsangiz, servis qayta
+      # ishga tushadi va bazadagi parol yangilanadi. Bo'sh qolsa — bazadagi parolga tegilmaydi.
+      - key: TEACHER_PASSWORD
+        sync: false
       - key: CERT_SIGNER_NAME
         sync: false
       - key: CERT_SIGNER_TITLE
@@ -40,7 +44,7 @@ services:
 
   # ── Frontend (React + Vite, statik sayt) ─────────────────────────
   - type: web
-    name: cyberai-frontend
+    name: cyber-learn
     runtime: static
     rootDir: frontend
     buildCommand: npm ci && npm run build

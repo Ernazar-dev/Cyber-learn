@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"cyberai-backend/internal/database"
+	"cyberai-backend/internal/middleware"
 	"cyberai-backend/internal/models"
 
 	"github.com/gin-gonic/gin"
@@ -180,6 +181,8 @@ func DeleteStudent(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "O'quvchini o'chirishda xatolik"})
 		return
 	}
+	// O'chirilgan o'quvchining tokeni darhol ishlamay qolsin
+	middleware.ForgetUser(user.ID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "O'quvchi muvaffaqiyatli o'chirildi"})
 }

@@ -91,7 +91,7 @@ func Init() {
 // tushishda AutoMigrate bir marta bajariladi. O'zgarmagan bo'lsa, AutoMigrate o'tkazib yuboriladi
 // (masofaviy bazada u ~100 ta tekshiruv so'rovi yuborib, ishga tushishni ~1 daqiqaga cho'zadi).
 // DB_FORCE_MIGRATE=true bilan majburan bajarish mumkin.
-const schemaVersion = "2026-10-31.1"
+const schemaVersion = "2026-10-31.2"
 
 type schemaMeta struct {
 	Key   string `gorm:"primaryKey"`
@@ -229,7 +229,9 @@ func syncTeacherAccount() {
 		return
 	}
 	if len(password) < 8 {
-		log.Fatal("TEACHER_PASSWORD kamida 8 belgidan iborat bo'lishi kerak (backend/.env).")
+		// Server to'xtamasin (Render'da sayt butunlay ochilmay qolardi) — eski parol amalda qoladi
+		log.Println("⚠️  TEACHER_PASSWORD 8 belgidan qisqa — e'tiborga olinmadi, bazadagi parol o'zgarmadi.")
+		return
 	}
 
 	if !exists {
@@ -248,10 +250,12 @@ func syncTeacherAccount() {
 	if bcrypt.CompareHashAndPassword([]byte(teacher.Password), []byte(password)) != nil {
 		hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		updates["password"] = string(hash)
+		// Parol o'zgardi — eski parol bilan olingan barcha tokenlar bekor bo'ladi
+		updates["token_version"] = gorm.Expr("token_version + 1")
 	}
 	if len(updates) > 0 {
 		DB.Model(&teacher).Updates(updates)
-		log.Println("O'qituvchi hisobi .env bo'yicha yangilandi")
+		log.Println("O'qituvchi paroli .env bo'yicha yangilandi — eski sessiyalar bekor qilindi")
 	}
 }
 

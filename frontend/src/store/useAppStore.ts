@@ -750,10 +750,12 @@ export const useAppStore = create<AppState>()(
 );
 
 if (typeof window !== 'undefined') {
-  window.addEventListener(AUTH_EXPIRED_EVENT, () => {
+  window.addEventListener(AUTH_EXPIRED_EVENT, (e) => {
     if (useAppStore.getState().currentUser) {
       useAppStore.getState().logoutUser();
-      notify.warning('Sessiya muddati tugadi', 'Iltimos, tizimga qaytadan kiring.');
+      // Server sababni yozadi: "Parol o'zgartirilgan. Iltimos, qayta kiring." va h.k.
+      const reason = (e as CustomEvent<string | undefined>).detail;
+      notify.warning('Sessiya tugadi', reason || 'Iltimos, tizimga qaytadan kiring.');
     }
   });
 }

@@ -37,6 +37,8 @@ type User struct {
 	Age      int     `json:"age"`
 	Role     Role    `gorm:"not null;default:'Student'" json:"role"`
 	Password string  `json:"-"` // bcrypt hash; bo'sh bo'lsa foydalanuvchi kira olmaydi
+	// TokenVersion parol o'zgarganda oshadi — tokenlardagi "ver" bilan mos kelmasa, token bekor (middleware.Auth)
+	TokenVersion int `gorm:"not null;default:0" json:"-"`
 
 	// Student-specific fields
 	DiagnosticScore         float64 `json:"diagnosticScore"`

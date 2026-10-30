@@ -14,17 +14,19 @@ function authHeaders(token?: string | null): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-function handleUnauthorized(res: Response, token?: string | null) {
+// 401 — sessiya bekor qilingan (muddati o'tgan, parol o'zgargan, hisob o'chirilgan).
+// Server yozgan sabab (message) bildirishnomada ko'rsatiladi.
+function handleUnauthorized(res: Response, token?: string | null, message?: string) {
   if (res.status === 401 && token) {
-    window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
+    window.dispatchEvent(new CustomEvent<string | undefined>(AUTH_EXPIRED_EVENT, { detail: message }));
   }
 }
 
 async function get<T>(path: string, token?: string | null): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, { headers: authHeaders(token) });
   if (!res.ok) {
-    handleUnauthorized(res, token);
     const body = await res.json().catch(() => ({}));
+    handleUnauthorized(res, token, body.error);
     throw new Error(body.error || `So'rov muvaffaqiyatsiz tugadi: ${res.status}`);
   }
   return res.json() as Promise<T>;
@@ -38,7 +40,7 @@ async function post<T>(path: string, payload: unknown, token?: string | null): P
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    handleUnauthorized(res, token);
+    handleUnauthorized(res, token, body.error);
     throw new Error(body.error || `So'rov muvaffaqiyatsiz tugadi: ${res.status}`);
   }
   return body as T;
@@ -52,7 +54,7 @@ async function put<T>(path: string, payload: unknown, token?: string | null): Pr
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    handleUnauthorized(res, token);
+    handleUnauthorized(res, token, body.error);
     throw new Error(body.error || `So'rov muvaffaqiyatsiz tugadi: ${res.status}`);
   }
   return body as T;
@@ -65,7 +67,7 @@ async function del<T>(path: string, token?: string | null): Promise<T> {
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    handleUnauthorized(res, token);
+    handleUnauthorized(res, token, body.error);
     throw new Error(body.error || `So'rov muvaffaqiyatsiz tugadi: ${res.status}`);
   }
   return body as T;
@@ -74,8 +76,8 @@ async function del<T>(path: string, token?: string | null): Promise<T> {
 async function downloadFile(path: string, token?: string | null): Promise<Blob> {
   const res = await fetch(`${API_URL}${path}`, { headers: authHeaders(token) });
   if (!res.ok) {
-    handleUnauthorized(res, token);
     const body = await res.json().catch(() => ({}));
+    handleUnauthorized(res, token, body.error);
     throw new Error(body.error || `So'rov muvaffaqiyatsiz tugadi: ${res.status}`);
   }
   return res.blob();
