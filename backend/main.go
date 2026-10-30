@@ -48,8 +48,12 @@ func main() {
 	allowedOrigins := []string{}
 	for _, o := range strings.Split(os.Getenv("ALLOWED_ORIGINS")+","+os.Getenv("ALLOWED_ORIGIN"), ",") {
 		if o = strings.TrimSpace(o); o != "" {
-			// Render (render.yaml, fromService) manzilni sxemasiz beradi: "cyberai.onrender.com"
+			// Render (render.yaml, fromService: host) servisning ichki nomini beradi: "cyber-learn-ab12".
+			// Ochiq manzil — "https://cyber-learn-ab12.onrender.com".
 			if !strings.Contains(o, "://") {
+				if !strings.Contains(o, ".") && o != "localhost" {
+					o += ".onrender.com"
+				}
 				o = "https://" + o
 			}
 			allowedOrigins = append(allowedOrigins, strings.TrimSuffix(o, "/"))
@@ -74,6 +78,10 @@ func main() {
 	}
 
 	// Health check
+	// Backend manzili brauzerda ochilganda 404 emas, tushunarli javob
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{"service": "CyberAI Backend", "health": "/health", "api": "/api"})
+	})
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "CyberAI Backend"})
 	})

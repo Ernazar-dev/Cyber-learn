@@ -1,9 +1,13 @@
-// Backend manzili. Render (render.yaml, fromService) uni sxemasiz beradi —
-// "cyberai-backend.onrender.com" — shuning uchun kerak bo'lsa https:// qo'shiladi.
+// Backend manzili. Render (render.yaml, fromService: host) servisning ichki nomini beradi —
+// "cyberai-backend-l86z" — ochiq manzil esa "cyberai-backend-l86z.onrender.com".
+// Shuning uchun: sxema bo'lmasa https:// qo'shiladi, nuqtasiz nomga .onrender.com qo'shiladi.
 function resolveApiUrl(raw: string | undefined): string {
-  const url = (raw ?? "").trim().replace(/\/+$/, "");
+  let url = (raw ?? "").trim().replace(/\/+$/, "");
   if (!url) return "http://localhost:8080";
-  return url.includes("://") ? url : `https://${url}`;
+  if (url.includes("://")) return url;
+  const host = url.split(/[/:]/)[0];
+  if (!host.includes(".") && host !== "localhost") url = url.replace(host, `${host}.onrender.com`);
+  return `https://${url}`;
 }
 
 export const API_URL = resolveApiUrl(import.meta.env.VITE_API_URL);

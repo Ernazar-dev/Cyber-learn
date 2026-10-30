@@ -22,7 +22,8 @@ services:
         sync: false
       - key: DATABASE_URL_UNPOOLED
         sync: false
-      # Frontend manzili (CORS) — Render o'zi qo'yadi
+      # Frontend manzili (CORS). Render ichki nomni beradi ("cyber-learn-ab12"),
+      # backend unga ".onrender.com" va https:// ni o'zi qo'shadi. Custom domen bo'lsa — qo'lda to'liq manzil yozing.
       - key: ALLOWED_ORIGINS
         fromService:
           type: web
@@ -53,7 +54,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
-      # Backend manzili — Render o'zi qo'yadi (sxemasiz, frontend https:// qo'shadi)
+      # Backend manzili. Render ichki nomni beradi ("cyberai-backend-l86z"), frontend unga
+      # ".onrender.com" va https:// ni o'zi qo'shadi (src/lib/api.ts). Build paytida qo'shiladi.
       - key: VITE_API_URL
         fromService:
           type: web
