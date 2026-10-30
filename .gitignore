@@ -1,0 +1,20 @@
+.DS_Store
+
+# Haqiqiy ma'lumotlar (Neon dump'lari, SQL) — hech qachon git'ga tushmasin
+backups/
+
+# Maxfiy sozlamalar
+.env
+*.env.local
+
+# Lokal baza va yig'ilgan fayllar
+*.db
+*.db-shm
+*.db-wal
+*.exe
+*.exe~
+node_modules/
+dist/
+
+.vscode/
+.idea/

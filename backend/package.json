@@ -1,0 +1,9 @@
+{
+  "name": "cyberai-backend",
+  "private": true,
+  "scripts": {
+    "build": "go build -o cyberai-backend.exe .",
+    "start": "set PORT=8081&& cyberai-backend.exe",
+    "dev": "npm run build && npm run start"
+  }
+}

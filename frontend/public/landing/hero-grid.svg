@@ -1,0 +1,41 @@
+<svg width="1800" height="1200" viewBox="0 0 1800 1200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glowA" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4827EC" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#4827EC" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#B643EF" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#B643EF" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="hex" width="64" height="110.85" patternUnits="userSpaceOnUse" patternTransform="translate(0,0)">
+      <path d="M32 0 L64 18.47 L64 55.4 L32 73.9 L0 55.4 L0 18.47 Z"
+            fill="none" stroke="#4827EC" stroke-opacity="0.08" stroke-width="1"/>
+      <path d="M32 73.9 L64 92.4 L64 110.85" fill="none" stroke="#4827EC" stroke-opacity="0.08" stroke-width="1"/>
+      <path d="M32 73.9 L0 92.4 L0 110.85" fill="none" stroke="#4827EC" stroke-opacity="0.08" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1800" height="1200" fill="url(#hex)"/>
+
+  <circle cx="1500" cy="180" r="480" fill="url(#glowA)"/>
+  <circle cx="200" cy="1000" r="520" fill="url(#glowB)"/>
+  <circle cx="900" cy="600" r="360" fill="url(#glowA)" opacity="0.5"/>
+
+  <!-- scattered circuit nodes -->
+  <g fill="#4827EC" fill-opacity="0.35">
+    <circle cx="260" cy="140" r="3"/>
+    <circle cx="420" cy="260" r="2.4"/>
+    <circle cx="1180" cy="120" r="2.6"/>
+    <circle cx="1420" cy="360" r="3"/>
+    <circle cx="1600" cy="620" r="2.4"/>
+    <circle cx="1040" cy="860" r="3"/>
+    <circle cx="640" cy="980" r="2.4"/>
+    <circle cx="180" cy="700" r="2.8"/>
+  </g>
+  <g stroke="#B643EF" stroke-opacity="0.22" stroke-width="1.2" fill="none">
+    <path d="M260 140 L420 260 L640 200"/>
+    <path d="M1180 120 L1420 360 L1600 620"/>
+    <path d="M1040 860 L640 980 L180 700"/>
+  </g>
+</svg>

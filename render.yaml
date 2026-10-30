@@ -1,0 +1,69 @@
+# Render Blueprint — CyberAI (backend + frontend), bepul (free) tarif.
+# Render: Dashboard → New → Blueprint → shu repozitoriyni tanlang.
+# `sync: false` qiymatlari birinchi deployda Render'da qo'lda kiritiladi (git'ga tushmaydi).
+services:
+  # ── Backend (Go + Gin) ───────────────────────────────────────────
+  - type: web
+    name: cyberai-backend
+    runtime: go
+    plan: free
+    region: frankfurt # Neon bazasi ham Frankfurt'da — kechikish minimal
+    rootDir: backend
+    buildCommand: go build -tags netgo -ldflags "-s -w" -o server .
+    startCommand: ./server
+    healthCheckPath: /health
+    envVars:
+      - key: GIN_MODE
+        value: release
+      - key: JWT_SECRET
+        generateValue: true
+      # Neon: pool'li manzil (ilova) va to'g'ridan-to'g'ri manzil (migratsiya)
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_UNPOOLED
+        sync: false
+      # Frontend manzili (CORS) — Render o'zi qo'yadi
+      - key: ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: cyberai-frontend
+          property: host
+      - key: TEACHER_USERNAME
+        value: teacher
+      - key: CERT_SIGNER_NAME
+        sync: false
+      - key: CERT_SIGNER_TITLE
+        value: Ta'lim direktori
+      - key: SEED_DEMO_DATA
+        value: "false"
+      # PUBLIC_API_URL kerak emas — Render RENDER_EXTERNAL_URL'ni o'zi beradi (sertifikat QR kodi)
+
+  # ── Frontend (React + Vite, statik sayt) ─────────────────────────
+  - type: web
+    name: cyberai-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Backend manzili — Render o'zi qo'yadi (sxemasiz, frontend https:// qo'shadi)
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: cyberai-backend
+          property: host
+      - key: VITE_GOOGLE_AI_API_KEY
+        sync: false
+    routes:
+      # SPA: /learning/... kabi manzillar to'g'ridan-to'g'ri ochilganda ham index.html qaytsin
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      # Vite fayl nomlarida hash bor — uzoq keshlash xavfsiz
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
