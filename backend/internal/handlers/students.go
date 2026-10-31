@@ -23,6 +23,7 @@ type StudentResponse struct {
 	DiagnosticScore         float64                  `json:"diagnosticScore"`
 	Level                   models.Level             `json:"level"`
 	FuzzyScore              float64                  `json:"fuzzyScore"`
+	XP                      int                      `json:"xp"`
 	CompletedModulesCount   int                      `json:"completedModulesCount"`
 	Speed                   float64                  `json:"speed"`
 	Errors                  float64                  `json:"errors"`
@@ -73,6 +74,7 @@ func buildStudentResponse(u models.User, w fuzzy.FuzzyWeightsInput) StudentRespo
 		DiagnosticScore:         u.DiagnosticScore,
 		Level:                   u.Level,
 		FuzzyScore:              u.FuzzyScore,
+		XP:                      u.XP,
 		CompletedModulesCount:   u.CompletedModulesCount,
 		Speed:                   u.Speed,
 		Errors:                  u.Errors,

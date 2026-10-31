@@ -7,6 +7,7 @@ import { useAppStore } from "@/store/useAppStore";
 import type { Student } from "@/store/useAppStore";
 import { LevelTag, PageHeader } from "@/components/common";
 import { FuzzyBadge, FuzzyNum } from "@/components/FuzzyEvaluation";
+import { RankBadge, getXpRank, rankRange } from "@/components/RankBadge";
 
 const { Text } = Typography;
 
@@ -35,9 +36,15 @@ export default function Students() {
       title: "O'quvchi",
       dataIndex: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
-      render: (_, s) => (
+      render: (_, s) => {
+        const xp = s.xp ?? 0;
+        const r = getXpRank(xp);
+        return (
         <Flex align="center" gap={10}>
-          <Avatar style={{ background: "#e8f0ff", color: "#2563eb" }} icon={<UserOutlined />} />
+          <Tooltip title={`${r.name} · ${xp.toLocaleString()} XP (${rankRange(r)})`}>
+            <span className="badge-pop"><RankBadge tier={r.tier} size={34} title={r.name} /></span>
+          </Tooltip>
+          <Avatar style={{ background: "#e8f0ff", color: "#2563eb", flexShrink: 0 }} icon={<UserOutlined />} />
           <Flex vertical>
             <Text strong>{s.name}</Text>
             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -46,10 +53,11 @@ export default function Students() {
             </Text>
           </Flex>
         </Flex>
-      ),
+        );
+      },
     },
     {
-      title: "Daraja",
+      title: "Bilim darajasi",
       dataIndex: "level",
       filters: [
         { text: "Boshlang'ich", value: "Beginner" },

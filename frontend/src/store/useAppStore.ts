@@ -63,6 +63,7 @@ interface BackendStudent {
   lastFuzzyResult: BackendFuzzyResult | null;
   moduleProgress: BackendModuleProgress[] | null;
   finalFuzzy?: FinalFuzzy | null;
+  xp?: number;
 }
 
 interface BackendAssignmentQuestion {
@@ -230,6 +231,8 @@ export interface Student {
   diagnosticScore: number;
   level: "Beginner" | "Intermediate" | "Advanced";
   fuzzyScore: number;
+  /** Yig'ilgan XP — reytingdagi daraja nishoni uchun */
+  xp?: number;
   completedModulesCount: number;
   speed: number;
   errors: number;
@@ -338,6 +341,7 @@ function backendStudentToStudent(s: BackendStudent): Student {
     diagnosticScore: s.diagnosticScore,
     level: s.level,
     fuzzyScore: s.fuzzyScore,
+    xp: s.xp ?? 0,
     completedModulesCount: s.completedModulesCount,
     speed: s.speed,
     errors: s.errors,
