@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -124,19 +125,52 @@ func AskAssistant(c *gin.Context) {
 		"contents":          contents,
 		"generationConfig":  gin.H{"temperature": 0.4, "topP": 0.9, "maxOutputTokens": 700},
 	})
-	url := "https://generativelanguage.googleapis.com/v1beta/models/" + assistantModel() + ":generateContent"
+	// Google modeli band bo'lsa (503/429/500) qisqa kutib qayta urinadi; asosiy model
+	// baribir band bo'lsa — GEMINI_FALLBACK_MODEL (berilgan bo'lsa) bilan bir marta.
+	models := []string{assistantModel(), assistantModel(), assistantModel()}
+	if fb := strings.TrimSpace(os.Getenv("GEMINI_FALLBACK_MODEL")); fb != "" {
+		models = append(models, fb)
+	}
+	busy := false
+	for i, model := range models {
+		if i > 0 {
+			select {
+			case <-time.After(time.Duration(i) * 1500 * time.Millisecond):
+			case <-c.Request.Context().Done():
+				return
+			}
+		}
+		text, status, err := callGemini(c, key, model, body)
+		if err == nil {
+			c.JSON(http.StatusOK, gin.H{"text": text})
+			return
+		}
+		log.Printf("Gemini xatosi (%s, %d): %v", model, status, err)
+		busy = status == http.StatusServiceUnavailable || status == http.StatusTooManyRequests || status >= 500 || status == 0
+		if !busy {
+			break // kalit/model xatosi — qayta urinish foyda bermaydi
+		}
+	}
+	if busy {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI xizmati hozir juda band. Bir daqiqadan keyin qayta urinib ko'ring."})
+		return
+	}
+	c.JSON(http.StatusBadGateway, gin.H{"error": "AI yordamchi hozir javob bera olmadi. Birozdan keyin qayta urinib ko'ring."})
+}
+
+// callGemini bitta so'rov yuboradi. Xatoda Google'ning HTTP holati (tarmoq xatosida 0) qaytadi.
+func callGemini(c *gin.Context, key, model string, body []byte) (string, int, error) {
+	url := "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent"
 	httpReq, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server xatosi"})
-		return
+		return "", http.StatusInternalServerError, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("x-goog-api-key", key)
 
 	resp, err := assistantHTTP.Do(httpReq)
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "AI xizmatiga ulanib bo'lmadi. Birozdan keyin qayta urinib ko'ring."})
-		return
+		return "", 0, err
 	}
 	defer resp.Body.Close()
 
@@ -154,12 +188,11 @@ func AskAssistant(c *gin.Context) {
 	}
 	_ = json.NewDecoder(io.LimitReader(resp.Body, 2<<20)).Decode(&data)
 	if resp.StatusCode != http.StatusOK {
-		// Google xatosi (kalit, kvota) logga yoziladi; foydalanuvchiga umumiy xabar
+		msg := "javob yo'q"
 		if data.Error != nil {
-			log.Printf("Gemini xatosi (%d): %s", resp.StatusCode, data.Error.Message)
+			msg = data.Error.Message
 		}
-		c.JSON(http.StatusBadGateway, gin.H{"error": "AI yordamchi hozir javob bera olmadi. Birozdan keyin qayta urinib ko'ring."})
-		return
+		return "", resp.StatusCode, errors.New(msg)
 	}
 
 	var sb strings.Builder
@@ -170,8 +203,7 @@ func AskAssistant(c *gin.Context) {
 	}
 	text := strings.TrimSpace(sb.String())
 	if text == "" {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "AI bo'sh javob qaytardi."})
-		return
+		return "", http.StatusBadGateway, errors.New("bo'sh javob")
 	}
-	c.JSON(http.StatusOK, gin.H{"text": text})
+	return text, http.StatusOK, nil
 }
