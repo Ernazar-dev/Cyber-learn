@@ -5,7 +5,7 @@ import type { MenuProps } from "antd";
 import {
   AppstoreOutlined, BarChartOutlined, DownOutlined, ExperimentOutlined, FlagOutlined, FormOutlined,
   HomeOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, NotificationOutlined, ReadOutlined,
-  SafetyCertificateOutlined, TeamOutlined, TrophyOutlined,
+  RobotOutlined, SafetyCertificateOutlined, TeamOutlined, TrophyOutlined,
 } from "@ant-design/icons";
 import { BrandLogo } from "@/components/common";
 import { useAppStore } from "@/store/useAppStore";
@@ -42,6 +42,7 @@ const NAV: NavGroup[] = [
       { key: "/learning", label: "Ta'lim yo'nalishlari", icon: <AppstoreOutlined /> },
       { key: "/lessons", label: "Darslar", icon: <ReadOutlined /> },
       { key: "/ctf", label: "CTF mashqlari", icon: <FlagOutlined /> },
+      { key: "/labs", label: "Laboratoriya", icon: <ExperimentOutlined />, roles: ["Student"] },
       { key: "/certificate", label: "Sertifikatlar", icon: <SafetyCertificateOutlined />, roles: ["Student"] },
     ],
   },
@@ -62,7 +63,7 @@ const NAV: NavGroup[] = [
   {
     label: "Boshqa",
     items: [
-      { key: "/ai-engine", label: "AI dvigateli", icon: <ExperimentOutlined /> },
+      { key: "/ai-engine", label: "AI dvigateli", icon: <RobotOutlined /> },
       { key: "/news", label: "Yangiliklar", icon: <NotificationOutlined /> },
     ],
   },
@@ -130,8 +131,9 @@ function Sidebar({ compact = false, onNavigate }: { compact?: boolean; onNavigat
         />
       </nav>
 
+      {!(userRole === "Student" && compact) && (
       <div className="workspace-sidebar-bottom">
-        {userRole === "Student" && !compact && (
+        {userRole === "Student" && (
           <div className="workspace-readiness">
             <div className="workspace-readiness-row">
               <span>Tayyorgarlik</span>
@@ -140,13 +142,17 @@ function Sidebar({ compact = false, onNavigate }: { compact?: boolean; onNavigat
             <Progress percent={Math.round(readinessScore * 100)} size="small" strokeColor="#60a5fa" trailColor="#ffffff1f" format={(p) => <span style={{ color: "#dbeafe" }}>{p}%</span>} />
           </div>
         )}
-        <Tooltip title={compact ? "Tizimdan chiqish" : ""} placement="right">
-          <button type="button" className="workspace-side-link" onClick={logoutUser}>
-            <LogoutOutlined />
-            {!compact && <span>Tizimdan chiqish</span>}
-          </button>
-        </Tooltip>
+        {/* O'quvchida sidebar sig'ishi uchun chiqish faqat profil menyusida (yuqori o'ng) */}
+        {userRole !== "Student" && (
+          <Tooltip title={compact ? "Tizimdan chiqish" : ""} placement="right">
+            <button type="button" className="workspace-side-link" onClick={logoutUser}>
+              <LogoutOutlined />
+              {!compact && <span>Tizimdan chiqish</span>}
+            </button>
+          </Tooltip>
+        )}
       </div>
+      )}
     </div>
   );
 }

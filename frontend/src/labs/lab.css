@@ -1,0 +1,107 @@
+/*
+ * Laboratoriya sahifalari uchun Tailwind. Faqat src/labs papkasi skanerlanadi
+ * va preflight ulanmaydi — antd sahifalariga hech narsa tegmaydi.
+ * Ranglar RootY'ning qora "midnight" palitrasidan loyihamizning yorug'
+ * palitrasiga (theme/theme.ts) almashtirilgan.
+ */
+@layer theme;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" source(none);
+@source "./";
+
+@theme inline {
+  --color-bg: var(--lab-bg);
+  --color-surface: var(--lab-surface);
+  --color-surface-2: var(--lab-surface-2);
+  --color-border: var(--lab-border);
+  --color-border-strong: var(--lab-border-strong);
+  --color-text: var(--lab-text);
+  --color-muted: var(--lab-muted);
+  --color-faint: var(--lab-faint);
+  --color-accent: var(--lab-accent);
+  --color-accent-hover: var(--lab-accent-hover);
+  --color-accent-soft: var(--lab-accent-soft);
+  --color-accent-text: var(--lab-accent-text);
+  --color-on-accent: var(--lab-on-accent);
+  --color-success: var(--lab-success);
+  --color-success-soft: var(--lab-success-soft);
+  --color-warning: var(--lab-warning);
+  --color-warning-soft: var(--lab-warning-soft);
+  --color-danger: var(--lab-danger);
+  --color-danger-soft: var(--lab-danger-soft);
+  --color-code: var(--lab-code);
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius-card: 16px;
+  --container-site: 90rem;
+}
+
+.lab-root {
+  --lab-bg: #f3f7fd;
+  --lab-surface: #ffffff;
+  --lab-surface-2: #eef3fb;
+  --lab-border: #dfe8f6;
+  --lab-border-strong: #b9c8e2;
+  --lab-text: #0f172a;
+  --lab-muted: #64748b;
+  --lab-faint: #9aa8bd;
+  --lab-accent: #2563eb;
+  --lab-accent-hover: #1d4ed8;
+  --lab-accent-soft: #eff6ff;
+  --lab-accent-text: #1d4ed8;
+  --lab-on-accent: #ffffff;
+  --lab-success: #16a34a;
+  --lab-success-soft: #ecfdf3;
+  --lab-warning: #b45309;
+  --lab-warning-soft: #fff7e6;
+  --lab-danger: #dc2626;
+  --lab-danger-soft: #fef2f2;
+  --lab-code: #f1f5fb;
+  color: var(--lab-text);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+/* Kichik, faqat laboratoriya ichidagi preflight. :where() — utilitalar doim ustun. */
+:where(.lab-root) :where(*, ::before, ::after) {
+  box-sizing: border-box;
+  border: 0 solid;
+}
+:where(.lab-root) :where(h1, h2, h3, h4, p, ol, ul, li, figure, blockquote, dl, dd, pre) {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+:where(.lab-root) :where(ol, ul) {
+  list-style: none;
+}
+:where(.lab-root) :where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  letter-spacing: inherit;
+}
+:where(.lab-root) :where(button) {
+  cursor: pointer;
+}
+:where(.lab-root) :where(button:disabled) {
+  cursor: not-allowed;
+}
+:where(.lab-root) :where(svg) {
+  display: block;
+  vertical-align: middle;
+}
+:where(.lab-root) :where(code, kbd, samp, pre) {
+  font-family: var(--font-mono);
+}
+:where(.lab-root) :where(table) {
+  border-collapse: collapse;
+}
+
+/* RootY'dagi muhr uslubidagi monospace yorliq. */
+.lab-root .stamp {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}

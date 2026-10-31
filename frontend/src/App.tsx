@@ -25,6 +25,8 @@ const Analytics = lazy(() => import("@/pages/Analytics"));
 const Rankings = lazy(() => import("@/pages/Rankings"));
 const News = lazy(() => import("@/pages/News"));
 const AIEngine = lazy(() => import("@/pages/AIEngine"));
+const LabsPage = lazy(() => import("@/labs/LabsPage"));
+const CryptoLabPage = lazy(() => import("@/labs/CryptoLabPage"));
 
 const queryClient = new QueryClient();
 const DEFAULT_DIRECTION = `/learning/${directions[0].id}`;
@@ -53,6 +55,8 @@ function Routes() {
 
       <Route path="/lessons" component={Lessons} />
       <Route path="/ctf" component={CTF} />
+      <Route path="/labs" component={LabsPage} />
+      <Route path="/labs/crypto" component={CryptoLabPage} />
       <Route path="/certificate" component={Certificate} />
       <Route path="/assignments" component={Assignments} />
       <Route path="/students" component={Students} />
