@@ -102,6 +102,18 @@ export function FuzzyPerformanceCard({ perf }: { perf: FuzzyPerformance }) {
   );
 }
 
+/** % ko'rsatkich yonidagi fuzzy baho (0..1): "62% (0.62)" */
+export function FuzzyNum({ score, size = 13 }: { score?: number; size?: number }) {
+  if (score === undefined || Number.isNaN(score)) return null;
+  return (
+    <Tooltip title="Fuzzy baho (0–1 oraliqda)">
+      <Text type="secondary" style={{ fontSize: size, fontWeight: 600, marginInlineStart: 6, whiteSpace: "nowrap" }}>
+        ({fuzzyValue(score)})
+      </Text>
+    </Tooltip>
+  );
+}
+
 /** Ixcham ko'rinish: "0.74 · Tayyor" — jadval va ro'yxatlar uchun */
 export function FuzzyBadge({ score, readiness }: { score?: number; readiness?: Readiness }) {
   if (score === undefined || !readiness) return <Text type="secondary">—</Text>;

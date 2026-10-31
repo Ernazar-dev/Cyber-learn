@@ -5,7 +5,7 @@ import { CheckCircleOutlined, DeleteOutlined, ExperimentOutlined, FormOutlined, 
 import { useAppStore } from "@/store/useAppStore";
 import { ModuleRadarChart } from "@/components/ModuleRadarChart";
 import { LevelTag, PageHeader, StatCard, percent } from "@/components/common";
-import { FuzzyBadge, ReadinessTag, fuzzyValue } from "@/components/FuzzyEvaluation";
+import { FuzzyBadge, FuzzyNum, ReadinessTag, fuzzyValue } from "@/components/FuzzyEvaluation";
 
 const { Text } = Typography;
 
@@ -126,8 +126,8 @@ export default function StudentDetail() {
       </Modal>
 
       <Row gutter={[16, 16]} className="stagger">
-        <Col xs={24} sm={12} lg={6}><StatCard label="Fuzzy tayyorgarlik" value={percent(student.fuzzyScore)} icon={<ExperimentOutlined />} /></Col>
-        <Col xs={24} sm={12} lg={6}><StatCard label="Diagnostika testi" value={percent(student.diagnosticScore)} icon={<FormOutlined />} /></Col>
+        <Col xs={24} sm={12} lg={6}><StatCard label="Fuzzy tayyorgarlik" value={<>{percent(student.fuzzyScore)}<FuzzyNum score={student.fuzzyScore} size={16} /></>} icon={<ExperimentOutlined />} /></Col>
+        <Col xs={24} sm={12} lg={6}><StatCard label="Diagnostika testi" value={<>{percent(student.diagnosticScore)}<FuzzyNum score={student.diagnosticScore} size={16} /></>} icon={<FormOutlined />} /></Col>
         <Col xs={24} sm={12} lg={6}><StatCard label="Tugatilgan modullar" value={`${student.completedModulesCount} ta`} icon={<CheckCircleOutlined />} tone="success" /></Col>
         <Col xs={24} sm={12} lg={6}>
           <StatCard

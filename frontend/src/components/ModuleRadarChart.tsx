@@ -167,7 +167,7 @@ export function ModuleRadarChart({ moduleProgress }: { moduleProgress: ModulePro
               onMouseLeave={() => setHovered(null)}
               style={{ transition: "r .15s" }}
             >
-              <title>{moduleProgress[i].title}: {targets[i]}%</title>
+              <title>{moduleProgress[i].title}: {targets[i]}%{moduleProgress[i].hasFuzzy && moduleProgress[i].fuzzyScore !== undefined ? ` · fuzzy ${moduleProgress[i].fuzzyScore!.toFixed(2)}` : ""}</title>
             </circle>
           ))}
         </svg>
@@ -182,6 +182,7 @@ export function ModuleRadarChart({ moduleProgress }: { moduleProgress: ModulePro
           const color = m.completed ? bandColor(score) : MUTED;
           const icon = m.unlocked || m.completed ? (MODULE_ICONS[m.id] ?? <SafetyOutlined />) : <LockOutlined />;
           const value = m.completed ? `${score}%` : m.unlocked ? "—" : "Yopiq";
+          const fuzzy = m.completed && m.hasFuzzy && m.fuzzyScore !== undefined ? m.fuzzyScore.toFixed(2) : null;
           const title = modules[m.id]?.title ?? m.title;
           const transform =
             side === "right" ? "translate(0, -50%)" :
@@ -211,7 +212,10 @@ export function ModuleRadarChart({ moduleProgress }: { moduleProgress: ModulePro
               {!compact && <HexBadge color={color} icon={icon} size={46} />}
               <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
                 <span style={{ fontSize: compact ? 11.5 : 14, fontWeight: 600, color: "#0f172a" }}>{title}</span>
-                <span style={{ fontSize: compact ? 13 : 17, fontWeight: 700, color }}>{value}</span>
+                <span style={{ fontSize: compact ? 13 : 17, fontWeight: 700, color }}>
+                  {value}
+                  {fuzzy && <span title="Fuzzy baho (0–1)" style={{ fontSize: compact ? 11 : 13, fontWeight: 600, color: "#64748b", marginInlineStart: 6 }}>({fuzzy})</span>}
+                </span>
               </div>
             </div>
           );

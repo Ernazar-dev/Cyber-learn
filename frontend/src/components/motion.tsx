@@ -52,7 +52,7 @@ export function SplitWords({ text, delay = 0, step = 70, wordClassName }: { text
 }
 
 /** Raqamni 0 dan qiymatgacha sanab chiqadi (ko'ringanda) */
-export function CountUp({ value, duration = 1300, decimals = 0, suffix = "" }: { value: number; duration?: number; decimals?: number; suffix?: string }) {
+export function CountUp({ value, duration = 1300, decimals = 0, suffix = "", separator = false }: { value: number; duration?: number; decimals?: number; suffix?: string; separator?: boolean }) {
   const { ref, inView } = useInView<HTMLSpanElement>(0.3);
   const [n, setN] = useState(0);
   useEffect(() => {
@@ -71,7 +71,8 @@ export function CountUp({ value, duration = 1300, decimals = 0, suffix = "" }: {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [inView, value, duration]);
-  return <span ref={ref}>{n.toFixed(decimals)}{suffix}</span>;
+  const text = separator ? n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) : n.toFixed(decimals);
+  return <span ref={ref}>{text}{suffix}</span>;
 }
 
 /** Kursor joylashuvini CSS o'zgaruvchilariga yozadi (.spotlight effekti uchun) */

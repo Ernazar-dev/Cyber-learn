@@ -11,6 +11,8 @@ import { getDirectionByModule } from "@/data/curriculum";
 import { moduleColor, moduleLabel } from "@/data/moduleTheme";
 import { ModuleRadarChart } from "@/components/ModuleRadarChart";
 import { LevelTag, PageHeader, StatCard, percent } from "@/components/common";
+import { FuzzyNum } from "@/components/FuzzyEvaluation";
+import { CountUp } from "@/components/motion";
 
 const { Text } = Typography;
 
@@ -36,15 +38,20 @@ function TeacherAnalytics() {
         </Space>
       ),
     },
-    { title: "Diagnostika", dataIndex: "diagnosticScore", render: (v: number) => percent(v), sorter: (a, b) => a.diagnosticScore - b.diagnosticScore },
+    { title: "Diagnostika", dataIndex: "diagnosticScore", render: (v: number) => <>{percent(v)}<FuzzyNum score={v} /></>, sorter: (a, b) => a.diagnosticScore - b.diagnosticScore },
     {
       title: "Fuzzy tayyorgarlik",
       dataIndex: "fuzzyScore",
       sorter: (a, b) => a.fuzzyScore - b.fuzzyScore,
-      render: (v: number) => <Progress percent={Math.round(v * 100)} size="small" strokeColor="#2563eb" style={{ minWidth: 120 }} />,
+      render: (v: number) => (
+        <Flex align="center" style={{ minWidth: 170 }}>
+          <Progress percent={Math.round(v * 100)} size="small" strokeColor="#2563eb" style={{ flex: 1, marginBottom: 0 }} />
+          <FuzzyNum score={v} />
+        </Flex>
+      ),
     },
     { title: "Daraja", dataIndex: "level", render: (_, s) => <LevelTag level={s.level} /> },
-    { title: "Xatolar", dataIndex: "errors", render: (v: number) => percent(v) },
+    { title: "Xatolar", dataIndex: "errors", render: (v: number) => <>{percent(v)}<FuzzyNum score={v} /></> },
   ];
 
   return (
@@ -56,7 +63,7 @@ function TeacherAnalytics() {
       />
 
       <Row gutter={[16, 16]} className="stagger">
-        <Col xs={24} sm={8}><StatCard label="Guruh o'rtacha ko'rsatkichi" value={percent(avg)} icon={<BarChartOutlined />} hint="ANFIS baholash bo'yicha" /></Col>
+        <Col xs={24} sm={8}><StatCard label="Guruh o'rtacha ko'rsatkichi" value={<>{percent(avg)}<FuzzyNum score={avg} size={16} /></>} icon={<BarChartOutlined />} hint="ANFIS baholash bo'yicha" /></Col>
         <Col xs={24} sm={8}><StatCard label="O'quvchilar" value={`${students.length} nafar`} icon={<TeamOutlined />} hint="Tizimda ro'yxatdan o'tgan" /></Col>
         <Col xs={24} sm={8}><StatCard label="Topshiriqlar" value={`${assignments.length} ta`} icon={<BookOutlined />} hint="O'qituvchi tomonidan yuborilgan" /></Col>
       </Row>
@@ -117,19 +124,23 @@ function StudentAnalytics() {
                   <Text strong>Hozirgi tayyorgarlik darajasi</Text>
                   <Text type="secondary" style={{ fontSize: 13 }}>Fuzzy qoidalar bo'yicha yakuniy ko'rsatkich</Text>
                 </Flex>
-                <Text style={{ fontSize: 30, fontWeight: 650, color: "#2563eb" }}>{percent(readinessScore)}</Text>
+                <Text style={{ fontSize: 30, fontWeight: 650, color: "#2563eb" }}>
+                  <CountUp value={Math.round(readinessScore * 100)} suffix="%" />
+                  <FuzzyNum score={readinessScore} size={18} />
+                </Text>
               </Flex>
               <Progress percent={Math.round(readinessScore * 100)} showInfo={false} strokeColor="#2563eb" />
               <Row gutter={[12, 12]}>
                 {[
-                  { label: "Bilim darajasi", value: percent(fuzzyMetrics.knowledge), color: "#2563eb" },
-                  { label: "Bajarish tezligi", value: percent(fuzzyMetrics.speed), color: "#16a34a" },
-                  { label: "Xatolar ulushi", value: percent(fuzzyMetrics.errors), color: "#dc2626" },
+                  { label: "Bilim darajasi", value: fuzzyMetrics.knowledge, color: "#2563eb" },
+                  { label: "Bajarish tezligi", value: fuzzyMetrics.speed, color: "#16a34a" },
+                  { label: "Xatolar ulushi", value: fuzzyMetrics.errors, color: "#dc2626" },
                 ].map((m) => (
                   <Col key={m.label} xs={8}>
                     <div style={{ background: "#f8fafc", border: "1px solid #eef1f6", borderRadius: 12, padding: 12, textAlign: "center" }}>
                       <Text type="secondary" style={{ fontSize: 12 }}>{m.label}</Text>
-                      <div style={{ fontSize: 20, fontWeight: 650, color: m.color }}>{m.value}</div>
+                      <div style={{ fontSize: 20, fontWeight: 650, color: m.color }}>{percent(m.value)}</div>
+                      <FuzzyNum score={m.value} size={12} />
                     </div>
                   </Col>
                 ))}

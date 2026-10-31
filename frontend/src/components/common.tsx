@@ -100,7 +100,7 @@ export function StatCard({
   footer?: ReactNode;
 }) {
   return (
-    <Card style={{ height: "100%" }} styles={{ body: { padding: 20 } }}>
+    <Card className="stat-card" style={{ height: "100%" }} styles={{ body: { padding: 20 } }}>
       <Flex vertical gap={10}>
         <Flex justify="space-between" align="center" gap={8}>
           <Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>
@@ -109,7 +109,13 @@ export function StatCard({
           {icon && <IconTile icon={icon} size={36} tone={tone} />}
         </Flex>
         <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, color: "#0f172a" }}>
-          {count ? <CountUp value={count.value} decimals={count.decimals} suffix={count.suffix} /> : value}
+          {count ? (
+            <CountUp value={count.value} decimals={count.decimals} suffix={count.suffix} />
+          ) : typeof value === "number" ? (
+            <CountUp value={value} separator />
+          ) : (
+            value
+          )}
         </div>
         {hint && (
           <Text type="secondary" style={{ fontSize: 12.5 }}>

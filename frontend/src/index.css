@@ -908,7 +908,7 @@ h4.ant-typography {
 
 .workspace-page {
   min-width: 0;
-  animation: page-enter 0.24s ease-out both;
+  animation: page-enter 0.4s var(--ease-premium) both;
 }
 
 .workspace-footer {
@@ -938,7 +938,7 @@ h4.ant-typography {
 }
 
 @keyframes page-enter {
-  from { opacity: 0; transform: translateY(5px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -1411,4 +1411,198 @@ h4.ant-typography {
   .dir-panel { padding: 16px; border-radius: 16px; }
   .dir-hero-num { font-size: 44px; }
   .dir-box { padding: 14px; }
+}
+
+/* ── Reyting: XP darajalari va nishonlar ─────────────────────────── */
+.rank-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 6px 10px;
+  border: 1px solid #eef1f6;
+  border-radius: 14px;
+  background: #fff;
+  height: 100%;
+  cursor: default;
+  transition: transform 0.2s var(--ease-premium, ease), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.rank-tile:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08); }
+.rank-tile:hover svg { transform: scale(1.06); }
+.rank-tile-mark {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  font-size: 15px;
+  background: #fff;
+  border-radius: 999px;
+}
+.rank-hero-badge { animation: rank-float 3.6s ease-in-out infinite; }
+@keyframes rank-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rank-hero-badge { animation: none; }
+  .rank-tile, .rank-tile svg { transition: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Harakat qatlami — butun loyiha bo'ylab yumshoq animatsiyalar
+   (prefers-reduced-motion yoqilganda yuqoridagi umumiy qoida o'chiradi)
+   ════════════════════════════════════════════════════════════════ */
+
+/* Kabinet sahifalari: sarlavha, kartalar va bloklar ketma-ket ko'tariladi.
+   .stagger qatorlarining o'zi ichidagi elementlarni animatsiya qiladi — ularni chetlab o'tamiz. */
+.workspace-page .page > :not(.stagger) {
+  animation: section-rise 0.55s var(--ease-premium) both;
+}
+.workspace-page .page > :nth-child(2) { animation-delay: 60ms; }
+.workspace-page .page > :nth-child(3) { animation-delay: 120ms; }
+.workspace-page .page > :nth-child(4) { animation-delay: 180ms; }
+.workspace-page .page > :nth-child(5) { animation-delay: 240ms; }
+.workspace-page .page > :nth-child(n + 6) { animation-delay: 300ms; }
+
+@keyframes section-rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Statistik kartalar: ko'tarilish va ikonkaning "sakrashi" */
+.stat-card {
+  transition: transform 0.35s var(--ease-premium), box-shadow 0.35s var(--ease-premium), border-color 0.35s ease !important;
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px -18px rgba(37, 87, 214, 0.45) !important;
+  border-color: #c9d8ff !important;
+}
+.stat-card .icon-tile {
+  transition: transform 0.45s var(--ease-premium), background 0.3s ease, color 0.3s ease;
+}
+.stat-card:hover .icon-tile {
+  transform: rotate(-8deg) scale(1.1);
+}
+
+/* antd hoverable kartalar — soyaga qo'shimcha yengil ko'tarilish */
+.ant-card-hoverable {
+  transition: transform 0.35s var(--ease-premium), box-shadow 0.35s var(--ease-premium) !important;
+}
+.ant-card-hoverable:hover { transform: translateY(-3px); }
+
+/* Progress chiziqlari chapdan o'sib chiqadi */
+.ant-progress-line .ant-progress-bg {
+  transform-origin: left center;
+  animation: progress-grow 1.1s var(--ease-premium) both;
+}
+@keyframes progress-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Aylana progress — chiziq chizilib chiqadi (oxirgi qiymat inline stildan olinadi) */
+.ant-progress-circle .ant-progress-circle-path {
+  animation: circle-draw 1.2s var(--ease-premium) both;
+}
+@keyframes circle-draw {
+  from { stroke-dasharray: 0 1000; }
+}
+
+/* Jadval qatorlari ketma-ket paydo bo'ladi */
+.ant-table-tbody > tr.ant-table-row {
+  animation: row-in 0.45s var(--ease-premium) both;
+}
+.ant-table-tbody > tr.ant-table-row:nth-child(2) { animation-delay: 30ms; }
+.ant-table-tbody > tr.ant-table-row:nth-child(3) { animation-delay: 60ms; }
+.ant-table-tbody > tr.ant-table-row:nth-child(4) { animation-delay: 90ms; }
+.ant-table-tbody > tr.ant-table-row:nth-child(5) { animation-delay: 120ms; }
+.ant-table-tbody > tr.ant-table-row:nth-child(6) { animation-delay: 150ms; }
+.ant-table-tbody > tr.ant-table-row:nth-child(7) { animation-delay: 180ms; }
+.ant-table-tbody > tr.ant-table-row:nth-child(8) { animation-delay: 210ms; }
+.ant-table-tbody > tr.ant-table-row:nth-child(9) { animation-delay: 240ms; }
+.ant-table-tbody > tr.ant-table-row:nth-child(n + 10) { animation-delay: 270ms; }
+@keyframes row-in {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Tugmalar bosilganda sezilarli javob */
+.ant-btn:not(:disabled) {
+  transition: all 0.2s var(--ease-premium), transform 0.12s ease;
+}
+.ant-btn:not(:disabled):active { transform: scale(0.97); }
+
+/* Bo'sh holat va natija ikonkalari */
+.workspace-page .ant-empty-image { animation: float 6s ease-in-out infinite; }
+.ant-result .ant-result-icon { animation: icon-pop 0.6s var(--ease-premium) both; }
+@keyframes icon-pop {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Teglar — yengil paydo bo'lish */
+.workspace-page .ant-tag { animation: tag-in 0.35s var(--ease-premium) both; }
+@keyframes tag-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── Reyting effektlari ─────────────────────────────────────────── */
+.badge-pop {
+  display: inline-flex;
+  animation: icon-pop 0.6s var(--ease-premium) both;
+  animation-delay: 120ms;
+}
+.badge-pop svg { transition: transform 0.3s var(--ease-premium); }
+.ant-table-row:hover .badge-pop svg,
+.podium-card:hover .badge-pop svg { transform: scale(1.15) rotate(-6deg); }
+
+.podium-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.4s var(--ease-premium), box-shadow 0.4s var(--ease-premium) !important;
+}
+.podium-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 36px -22px rgba(15, 23, 42, 0.35) !important;
+}
+/* 1-o'rin: vaqti-vaqti bilan o'tib turuvchi oltin yaltiroq */
+.podium-first::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 236, 170, 0.55), transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  animation: podium-shine 4.5s ease-in-out 1s infinite;
+  pointer-events: none;
+}
+@keyframes podium-shine {
+  0%, 60% { transform: translateX(-130%) skewX(-18deg); }
+  85%, 100% { transform: translateX(320%) skewX(-18deg); }
+}
+.crown-bob { animation: crown-bob 2.4s ease-in-out infinite; }
+@keyframes crown-bob {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-3px) rotate(-6deg); }
+}
+
+/* Joriy daraja nishoni atrofida pulsatsiya */
+.rank-current-glow::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--glow) 35%, transparent), transparent 70%);
+  animation: glow-pulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.92); }
+  50% { opacity: 0.9; transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .podium-first::after, .crown-bob, .rank-current-glow::before, .workspace-page .ant-empty-image { animation: none; }
 }
