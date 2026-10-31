@@ -1606,3 +1606,21 @@ h4.ant-typography {
 @media (prefers-reduced-motion: reduce) {
   .podium-first::after, .crown-bob, .rank-current-glow::before, .workspace-page .ant-empty-image { animation: none; }
 }
+
+/* ── Telefon: karta sarlavhasi + izoh (extra) siqilmasin ─────────── */
+@media (max-width: 575px) {
+  .ant-card .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    padding-block: 10px;
+  }
+  .ant-card .ant-card-head-title {
+    flex: 1 0 auto;
+    white-space: normal;
+  }
+  .ant-card .ant-card-extra {
+    margin-inline-start: 0;
+    max-width: 100%;
+    white-space: normal;
+  }
+}

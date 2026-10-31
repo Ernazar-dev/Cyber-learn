@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Avatar, Card, Col, Empty, Flex, Input, Progress, Row, Select, Skeleton, Table, Tag, Tooltip, Typography } from "antd";
+import { Avatar, Card, Col, Empty, Flex, Grid, Input, Progress, Row, Select, Skeleton, Table, Tag, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { CheckCircleFilled, CrownFilled, FireOutlined, LockOutlined, TeamOutlined, ThunderboltOutlined, TrophyOutlined } from "@ant-design/icons";
 import { useAppStore } from "@/store/useAppStore";
@@ -127,6 +127,8 @@ function RankLadder({ xp }: { xp?: number }) {
 
 export default function Rankings() {
   const { currentUser } = useAppStore();
+  const screens = Grid.useBreakpoint();
+  const mobile = !screens.sm;
   const [search, setSearch] = useState("");
   const [level, setLevel] = useState<string>("all");
   const [tier, setTier] = useState<number | "all">("all");
@@ -147,11 +149,40 @@ export default function Rankings() {
   const maxXP = Math.max(0, ...sorted.map((e) => e.xp));
   const avgXP = sorted.length ? Math.round(sorted.reduce((s, e) => s + e.xp, 0) / sorted.length) : 0;
 
+  const filters = (
+    <Flex gap={8} wrap>
+      <Input.Search allowClear placeholder="Ism bo'yicha qidirish" onChange={(e) => setSearch(e.target.value)} style={{ width: mobile ? "100%" : 200 }} />
+      <Select<number | "all">
+        value={tier}
+        onChange={setTier}
+        style={{ width: mobile ? "calc(50% - 4px)" : 180 }}
+        options={[
+          { value: "all", label: "Barcha XP darajalari" },
+          ...XP_RANKS.map((r) => ({
+            value: r.tier,
+            label: <Flex align="center" gap={8}><RankBadge tier={r.tier} size={18} />{r.name}</Flex>,
+          })),
+        ]}
+      />
+      <Select
+        value={level}
+        onChange={setLevel}
+        style={{ width: mobile ? "calc(50% - 4px)" : 160 }}
+        options={[
+          { value: "all", label: "Barcha bilim darajalari" },
+          { value: "Beginner", label: "Boshlang'ich" },
+          { value: "Intermediate", label: "O'rta" },
+          { value: "Advanced", label: "Yuqori" },
+        ]}
+      />
+    </Flex>
+  );
+
   const columns: TableColumnsType<Entry> = [
     {
       title: "#",
       dataIndex: "rank",
-      width: 56,
+      width: mobile ? 36 : 56,
       render: (r: number) => <Text strong style={{ color: r <= 3 ? MEDAL[r as 1 | 2 | 3].color : "#94a3b8" }}>{r}</Text>,
     },
     {
@@ -160,9 +191,9 @@ export default function Rankings() {
       render: (_, e) => {
         const r = getXpRank(e.xp);
         return (
-          <Flex align="center" gap={10}>
-            <span className="badge-pop"><RankBadge tier={r.tier} size={34} /></span>
-            <UserAvatar e={e} />
+          <Flex align="center" gap={mobile ? 8 : 10}>
+            <span className="badge-pop"><RankBadge tier={r.tier} size={mobile ? 30 : 34} /></span>
+            {!mobile && <UserAvatar e={e} />}
             <Flex vertical style={{ minWidth: 0 }}>
               <Flex align="center" gap={6}>
                 <Text strong ellipsis>{e.name}</Text>
@@ -174,7 +205,7 @@ export default function Rankings() {
         );
       },
     },
-    { title: "Bilim darajasi", dataIndex: "level", render: (_, e) => <LevelTag level={e.level} /> },
+    { title: "Bilim darajasi", dataIndex: "level", responsive: ["md"], render: (_, e) => <LevelTag level={e.level} /> },
     {
       title: "XP",
       dataIndex: "xp",
@@ -184,6 +215,7 @@ export default function Rankings() {
     {
       title: "XP darajasi",
       key: "xpRank",
+      responsive: ["sm"],
       align: "right",
       render: (_, e) => {
         const r = getXpRank(e.xp);
@@ -195,7 +227,7 @@ export default function Rankings() {
         );
       },
     },
-    { title: "Vazifalar", dataIndex: "completedTasks", align: "right" },
+    { title: "Vazifalar", dataIndex: "completedTasks", align: "right", responsive: ["sm"] },
   ];
 
   return (
@@ -232,21 +264,25 @@ export default function Rankings() {
               const m = MEDAL[e.rank as 1 | 2 | 3] ?? MEDAL[3];
               const r = getXpRank(e.xp);
               return (
-                <Col key={e.userId} xs={24} md={8}>
-                  <Card className={e.rank === 1 ? "podium-card podium-first" : "podium-card"} style={{ background: m.bg, borderColor: m.border, height: "100%" }}>
-                    <Flex vertical align="center" gap={8}>
+                <Col key={e.userId} xs={8} md={8}>
+                  <Card className={e.rank === 1 ? "podium-card podium-first" : "podium-card"} style={{ background: m.bg, borderColor: m.border, height: "100%" }} styles={{ body: { padding: mobile ? "14px 6px" : 24 } }}>
+                    <Flex vertical align="center" gap={mobile ? 4 : 8}>
                       {e.rank === 1 ? <CrownFilled className="crown-bob" style={{ color: m.color, fontSize: 22 }} /> : <TrophyOutlined style={{ color: m.color, fontSize: 20 }} />}
                       <div style={{ position: "relative" }}>
-                        <UserAvatar e={e} size={e.rank === 1 ? 64 : 54} />
-                        <span className="badge-pop" style={{ position: "absolute", right: -10, bottom: -6 }}><RankBadge tier={r.tier} size={30} /></span>
+                        <UserAvatar e={e} size={mobile ? (e.rank === 1 ? 48 : 42) : e.rank === 1 ? 64 : 54} />
+                        <span className="badge-pop" style={{ position: "absolute", right: -10, bottom: -6 }}><RankBadge tier={r.tier} size={mobile ? 24 : 30} /></span>
                       </div>
-                      <Text strong style={{ fontSize: 15, textAlign: "center" }}>{e.name}</Text>
+                      <Text strong ellipsis={{ tooltip: e.name }} style={{ fontSize: mobile ? 12.5 : 15, textAlign: "center", maxWidth: "100%" }}>{e.name}</Text>
+                      {mobile ? (
+                        <Text style={{ fontSize: 11.5, color: r.color, fontWeight: 600 }}>{r.name}</Text>
+                      ) : (
                       <Flex gap={6} wrap justify="center">
                         <Tag bordered={false} style={{ color: m.color, background: "#fff" }}>{e.rank}-o'rin</Tag>
                         <Tag bordered={false} style={{ color: r.color, background: "#fff", fontWeight: 600 }}>{r.name}</Tag>
                       </Flex>
-                      <Text strong style={{ fontSize: 18 }}>{e.xp.toLocaleString()} XP</Text>
-                      <Text type="secondary" style={{ fontSize: 12 }}>{e.completedTasks} ta vazifa</Text>
+                      )}
+                      <Text strong style={{ fontSize: mobile ? 14 : 18 }}>{e.xp.toLocaleString()} XP</Text>
+                      {!mobile && <Text type="secondary" style={{ fontSize: 12 }}>{e.completedTasks} ta vazifa</Text>}
                     </Flex>
                   </Card>
                 </Col>
@@ -257,41 +293,16 @@ export default function Rankings() {
           <Card
             title="Umumiy jadval"
             styles={{ body: { padding: 0 } }}
-            extra={
-              <Flex gap={8} wrap>
-                <Input.Search allowClear placeholder="Ism bo'yicha qidirish" onChange={(e) => setSearch(e.target.value)} style={{ width: 200 }} />
-                <Select<number | "all">
-                  value={tier}
-                  onChange={setTier}
-                  style={{ width: 180 }}
-                  options={[
-                    { value: "all", label: "Barcha XP darajalari" },
-                    ...XP_RANKS.map((r) => ({
-                      value: r.tier,
-                      label: <Flex align="center" gap={8}><RankBadge tier={r.tier} size={18} />{r.name}</Flex>,
-                    })),
-                  ]}
-                />
-                <Select
-                  value={level}
-                  onChange={setLevel}
-                  style={{ width: 160 }}
-                  options={[
-                    { value: "all", label: "Barcha bilim darajalari" },
-                    { value: "Beginner", label: "Boshlang'ich" },
-                    { value: "Intermediate", label: "O'rta" },
-                    { value: "Advanced", label: "Yuqori" },
-                  ]}
-                />
-              </Flex>
-            }
+            extra={mobile ? undefined : filters}
           >
+            {mobile && <div style={{ padding: 12, borderBottom: "1px solid #f0f0f0" }}>{filters}</div>}
             <Table<Entry>
               rowKey="userId"
               columns={columns}
               dataSource={filtered}
               pagination={{ pageSize: 20, hideOnSinglePage: true }}
-              scroll={{ x: 760 }}
+              scroll={mobile ? undefined : { x: 760 }}
+              size={mobile ? "small" : "middle"}
               rowClassName={(e) => (e.userId === currentUser?.id ? "ant-table-row-selected" : "")}
               locale={{ emptyText: "O'quvchi topilmadi" }}
             />

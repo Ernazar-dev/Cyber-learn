@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { App, Avatar, Button, Card, Flex, Input, Popconfirm, Progress, Result, Space, Table, Tag, Tooltip, Typography } from "antd";
+import { App, Avatar, Button, Card, Flex, Grid, Input, Popconfirm, Progress, Result, Space, Table, Tag, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { DeleteOutlined, EyeOutlined, UserOutlined } from "@ant-design/icons";
 import { useAppStore } from "@/store/useAppStore";
@@ -16,6 +16,8 @@ export default function Students() {
   const [, setLocation] = useLocation();
   const { message } = App.useApp();
   const [query, setQuery] = useState("");
+  const screens = Grid.useBreakpoint();
+  const mobile = !screens.sm;
 
   useEffect(() => {
     if (userRole === "Teacher") fetchStudents();
@@ -44,7 +46,7 @@ export default function Students() {
           <Tooltip title={`${r.name} · ${xp.toLocaleString()} XP (${rankRange(r)})`}>
             <span className="badge-pop"><RankBadge tier={r.tier} size={34} title={r.name} /></span>
           </Tooltip>
-          <Avatar style={{ background: "#e8f0ff", color: "#2563eb", flexShrink: 0 }} icon={<UserOutlined />} />
+          {!mobile && <Avatar style={{ background: "#e8f0ff", color: "#2563eb", flexShrink: 0 }} icon={<UserOutlined />} />}
           <Flex vertical>
             <Text strong>{s.name}</Text>
             <Text type="secondary" style={{ fontSize: 12 }}>

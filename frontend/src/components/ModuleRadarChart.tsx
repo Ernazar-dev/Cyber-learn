@@ -107,7 +107,7 @@ export function ModuleRadarChart({ moduleProgress }: { moduleProgress: ModulePro
         ))}
       </div>
 
-      <div style={{ position: "relative", width: "100%", aspectRatio: `${W} / ${H}` }}>
+      <div style={{ position: "relative", width: "100%", aspectRatio: `${W} / ${H}`, marginTop: compact ? 30 : 0, marginBottom: compact ? 24 : 0 }}>
         <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ display: "block", overflow: "visible" }} aria-label="Modullar bo'yicha ball radari">
           <defs>
             {/* Markaz qizil → chekka yashil: bitta yaxlit "issiqlik" disk */}
@@ -203,18 +203,20 @@ export function ModuleRadarChart({ moduleProgress }: { moduleProgress: ModulePro
                 flexDirection: side === "left" ? "row-reverse" : "row",
                 alignItems: "center",
                 gap: compact ? 6 : 10,
-                textAlign: side === "left" ? "right" : "left",
-                whiteSpace: "nowrap",
+                textAlign: side === "left" ? "right" : side === "center" && compact ? "center" : "left",
+                // Tor ekranda yon yorliqlar chekkadan chiqmasin — o'q va chekka orasidagi joyga o'raladi
+                whiteSpace: compact ? "normal" : "nowrap",
+                maxWidth: compact ? (side === "center" ? "60%" : `${((CX - LABEL_R) / W) * 100 - 1}%`) : undefined,
                 opacity: hovered === null || hovered === i ? 1 : 0.55,
                 transition: "opacity .15s",
               }}
             >
               {!compact && <HexBadge color={color} icon={icon} size={46} />}
-              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25, alignItems: side === "left" ? "flex-end" : side === "center" && compact ? "center" : "flex-start" }}>
                 <span style={{ fontSize: compact ? 11.5 : 14, fontWeight: 600, color: "#0f172a" }}>{title}</span>
                 <span style={{ fontSize: compact ? 13 : 17, fontWeight: 700, color }}>
                   {value}
-                  {fuzzy && <span title="Fuzzy baho (0–1)" style={{ fontSize: compact ? 11 : 13, fontWeight: 600, color: "#64748b", marginInlineStart: 6 }}>({fuzzy})</span>}
+                  {fuzzy && <span title="Fuzzy baho (0–1)" style={{ fontSize: compact ? 11 : 13, fontWeight: 600, color: "#64748b", marginInlineStart: compact ? 4 : 6, whiteSpace: "nowrap" }}>({fuzzy})</span>}
                 </span>
               </div>
             </div>
