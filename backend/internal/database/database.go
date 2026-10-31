@@ -246,6 +246,19 @@ func syncTeacherAccount() {
 		return
 	}
 
+	// Lokal kompyuter va Render bitta Neon bazasiga ulangan bo'lsa, ikkala .env dagi parol farq qilganda
+	// har bir ishga tushish parolni "o'ziniki"ga qaytarib, token_version'ni oshirardi — o'qituvchini
+	// tez-tez "Sessiya tugadi" bilan chiqarib yuborardi (Render free har uyg'onishda qayta ishga tushadi).
+	// Shuning uchun masofaviy bazadagi parolni faqat Render'dagi server (RENDER=true) yangilaydi.
+	// Majburlash kerak bo'lsa: TEACHER_PASSWORD_SYNC=true.
+	remote := isPostgresURL(strings.TrimSpace(os.Getenv("DATABASE_URL")))
+	if remote && os.Getenv("RENDER") == "" && os.Getenv("TEACHER_PASSWORD_SYNC") != "true" {
+		if bcrypt.CompareHashAndPassword([]byte(teacher.Password), []byte(password)) != nil {
+			log.Println("ℹ️  Lokal server: TEACHER_PASSWORD masofaviy bazadagidan farq qiladi — o'zgartirilmadi (parolni Render'da boshqaring).")
+		}
+		return
+	}
+
 	updates := map[string]interface{}{}
 	if bcrypt.CompareHashAndPassword([]byte(teacher.Password), []byte(password)) != nil {
 		hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
