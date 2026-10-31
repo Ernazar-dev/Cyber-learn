@@ -13,6 +13,21 @@ import (
 // sobit oyna). Login/parolni tanlab ko'rishni (brute-force) sekinlashtirish uchun.
 // Bitta server nusxasi uchun yetarli (Render free — bitta instance).
 func RateLimit(limit int, window time.Duration) gin.HandlerFunc {
+	return rateLimit(limit, window, func(c *gin.Context) string { return c.ClientIP() })
+}
+
+// RateLimitUser — Auth()'dan keyin ishlatiladi: hisob bo'yicha limit (bitta IP ortidagi
+// butun sinfga emas, aynan shu foydalanuvchiga ta'sir qiladi).
+func RateLimitUser(limit int, window time.Duration) gin.HandlerFunc {
+	return rateLimit(limit, window, func(c *gin.Context) string {
+		if id, ok := c.Get("userID"); ok {
+			return "u:" + strconv.FormatUint(uint64(id.(uint)), 10)
+		}
+		return c.ClientIP()
+	})
+}
+
+func rateLimit(limit int, window time.Duration, keyOf func(*gin.Context) string) gin.HandlerFunc {
 	type bucket struct {
 		count int
 		reset time.Time
@@ -25,7 +40,7 @@ func RateLimit(limit int, window time.Duration) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		now := time.Now()
-		key := c.ClientIP()
+		key := keyOf(c)
 
 		mu.Lock()
 		// Eskirgan yozuvlarni vaqti-vaqti bilan tozalash — xotira o'smasin

@@ -917,7 +917,8 @@ h4.ant-typography {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: auto;
-  padding: 18px 32px;
+  /* o'ng tomonda AI yordamchi tugmasi turadi — matn uning ostida qolmasin */
+  padding: 18px 96px 18px 32px;
   border-top: 1px solid var(--ws-line);
   font-size: 12px;
   color: var(--ws-muted);
@@ -956,7 +957,7 @@ h4.ant-typography {
   .workspace-account-copy,
   .workspace-account-arrow { display: none; }
   .workspace .workspace-content { padding: 20px 14px; }
-  .workspace-footer { padding: 16px; font-size: 11px; }
+  .workspace-footer { padding: 16px 84px 16px 16px; font-size: 11px; }
 }
 
 /* CTF terminal kursori */

@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"cyberai-backend/internal/database"
@@ -115,6 +117,13 @@ func CreateLesson(c *gin.Context) {
 		return
 	}
 
+	// Havolalar o'quvchi brauzerida <a href>/<iframe src> bo'lib ochiladi — "javascript:" kabi
+	// sxemalar XSS bo'ladi. Faqat http(s) yoki o'zimizdagi /api/files/... ruxsat.
+	if !safeLinkURL(req.VideoURL, false) || !safeLinkURL(req.FileURL, true) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Havola http:// yoki https:// bilan boshlanishi kerak"})
+		return
+	}
+
 	tagsJSON, _ := json.Marshal(req.Tags)
 
 	lessonType := models.LessonType(req.LessonType)
@@ -144,6 +153,19 @@ func CreateLesson(c *gin.Context) {
 	database.DB.Preload("ReadByStudents").First(&lesson, lesson.ID)
 	userID, _ := c.Get("userID")
 	c.JSON(http.StatusCreated, buildLessonResponse(lesson, userID.(uint)))
+}
+
+// safeLinkURL — bo'sh, http(s) havola yoki (allowLocal bo'lsa) yuklangan fayl yo'li.
+func safeLinkURL(raw string, allowLocal bool) bool {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return true
+	}
+	if allowLocal && strings.HasPrefix(s, "/api/files/") {
+		return true
+	}
+	u, err := url.Parse(s)
+	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
 }
 
 // DELETE /api/lessons/:id — Teacher only
@@ -212,7 +234,11 @@ func MarkLessonRead(c *gin.Context) {
 		UserID:   userID.(uint),
 		ReadAt:   time.Now(),
 	}
-	database.DB.Create(&lr)
+	// Parallel so'rovda (lesson_id, user_id) kaliti ikkinchi yozuvni rad etadi — XP bir marta
+	if err := database.DB.Create(&lr).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "Dars allaqachon o'qilgan"})
+		return
+	}
 	database.DB.Model(&models.User{}).Where("id = ?", userID).
 		Update("xp", gorm.Expr("xp + ?", lessonReadXP(lesson.Difficulty)))
 

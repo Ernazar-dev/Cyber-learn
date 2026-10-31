@@ -22,11 +22,11 @@ export interface Direction {
   description: string;
   outcomes: string[];
   moduleIds: number[];
+  /** Savollar va to'g'ri javoblar faqat serverda (GET /api/diagnostic) — bu yerda faqat tavsif */
   diagnostic: {
     title: string;
     description: string;
-    timeLimit: number;
-    questions: QuizQuestion[];
+    questionCount: number;
   };
 }
 
@@ -85,17 +85,7 @@ export const directions: Direction[] = [
       title: "Diagnostika testi",
       description:
         "8 ta savoldan iborat qisqa test. Natija asosida fuzzy (ANFIS) tizimi darajangizni aniqlaydi va mos modullarni ochadi. Testni istalgan vaqtda qayta topshirishingiz mumkin.",
-      timeLimit: 60,
-      questions: [
-        { q: "Kiberxavfsizlikda CIA nimaning qisqartmasi?", correct: 0, options: ["Maxfiylik, butunlik, mavjudlik", "Markaziy razvedka agentligi", "Kompyuter ma'lumotlariga kirish", "Kiber infratuzilma arxitekturasi"] },
-        { q: "Qaysi protokol veb trafikni shifrlaydi?", correct: 2, options: ["HTTP", "FTP", "HTTPS", "SMTP"] },
-        { q: "Zero-day zaiflik nima?", correct: 1, options: ["Darhol tuzatilgan xato", "Hali tuzatish (patch) chiqmagan noma'lum zaiflik", "Firewall qoidasi", "Zararli dastur turi"] },
-        { q: "Firewall nima qiladi?", correct: 1, options: ["Internetni tezlashtiradi", "Tarmoq trafigini nazorat qiladi va filtrlaydi", "Ma'lumotni shifrlaydi", "Fayllarni zaxiralaydi"] },
-        { q: "Phishing nima?", correct: 1, options: ["Tarmoqni skanerlash usuli", "Login ma'lumotlarini o'g'irlashga qaratilgan firibgarlik", "Shifrlash turi", "Monitoring vositasi"] },
-        { q: "Qaysi parol kuchli?", correct: 2, options: ["password123", "abc", "Tr0ub4dor&3!", "123456"] },
-        { q: "Ikki faktorli autentifikatsiya nima?", correct: 2, options: ["Ikkita paroldan foydalanish", "Faqat biometrika", "Ikki xil tekshiruvni talab qiluvchi himoya", "Ikki marta shifrlash"] },
-        { q: "Malware nima?", correct: 1, options: ["Uskuna nosozligi", "Tizimga zarar yetkazuvchi dastur", "Tarmoq protokoli", "Firewall turi"] },
-      ],
+      questionCount: 8,
     },
   },
 ];

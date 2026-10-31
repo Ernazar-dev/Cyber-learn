@@ -18,9 +18,12 @@ import (
 )
 
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Username string `json:"username" binding:"required,max=64"`
+	Password string `json:"password" binding:"required,max=128"`
 }
+
+// dummyHash — mavjud bo'lmagan login uchun taqqoslanadigan soxta hash (DefaultCost bilan).
+var dummyHash, _ = bcrypt.GenerateFromPassword([]byte("cyberai-timing-equalizer"), bcrypt.DefaultCost)
 
 type RegisterRequest struct {
 	Name     string `json:"name" binding:"required,min=2,max=80"`
@@ -130,7 +133,7 @@ func Login(c *gin.Context) {
 
 	const invalidCreds = "Login yoki parol noto'g'ri"
 	username := normalizeUsername(req.Username)
-	if locked, wait := loginLocked(username); locked {
+	if locked, wait := loginLocked(username, c.ClientIP()); locked {
 		c.Header("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
 		c.JSON(http.StatusTooManyRequests, gin.H{
 			"error": fmt.Sprintf("Juda ko'p noto'g'ri urinish. %d daqiqadan keyin qayta urinib ko'ring.", int(wait.Minutes())+1),
@@ -141,7 +144,10 @@ func Login(c *gin.Context) {
 	result := database.DB.Where("username = ?", username).First(&user)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
-			loginFailed(username)
+			// Mavjud hisobdagidek bcrypt vaqti sarflanadi — javob tezligidan
+			// login bor-yo'qligini bilib bo'lmasin (user enumeration)
+			_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(req.Password))
+			loginFailed(username, c.ClientIP())
 			c.JSON(http.StatusUnauthorized, gin.H{"error": invalidCreds})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Server xatosi"})
@@ -153,11 +159,11 @@ func Login(c *gin.Context) {
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		loginFailed(username)
+		loginFailed(username, c.ClientIP())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": invalidCreds})
 		return
 	}
-	loginSucceeded(username)
+	loginSucceeded(username, c.ClientIP())
 
 	token, err := middleware.GenerateToken(user.ID, user.Name, string(user.Role), user.TokenVersion)
 	if err != nil {

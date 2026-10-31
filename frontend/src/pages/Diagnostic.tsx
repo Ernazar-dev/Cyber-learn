@@ -1,28 +1,55 @@
 import { useCallback } from "react";
 import { useLocation, useRoute } from "wouter";
-import { Button, Card, Col, Collapse, Flex, Progress, Result, Row, Statistic, Tag, Typography } from "antd";
+import { useQuery } from "@tanstack/react-query";
+import { App, Button, Card, Col, Collapse, Flex, Progress, Result, Row, Skeleton, Statistic, Tag, Typography } from "antd";
 import { CheckCircleFilled } from "@ant-design/icons";
-import { useAppStore } from "@/store/useAppStore";
-import { getDirection } from "@/data/curriculum";
+import { useAppStore, type ServerAssessment } from "@/store/useAppStore";
+import { getDirection, type QuizQuestion } from "@/data/curriculum";
 import { PageHeader } from "@/components/common";
-import { QuizRunner, type QuizOutcome } from "@/components/QuizRunner";
+import { QuizRunner } from "@/components/QuizRunner";
 import { translateLevel } from "@/lib/utils";
 import api from "@/lib/api";
 
 const { Text } = Typography;
+
+interface DiagnosticData {
+  timeLimit: number;
+  questions: QuizQuestion[];
+}
 
 export default function Diagnostic() {
   const [, params] = useRoute("/learning/:directionId/diagnostic");
   const [, setLocation] = useLocation();
   const direction = getDirection(params?.directionId);
   const { submitAssessment, lastFuzzyResult, token, userRole } = useAppStore();
+  const { message } = App.useApp();
 
-  const handleFinish = useCallback(async (o: QuizOutcome) => {
-    const metrics = { knowledge: o.knowledge, errors: o.errors, speed: o.speed };
-    submitAssessment(metrics);
-    // Best-effort backend sync so module unlocks stay consistent server-side.
-    await api.post("/api/assessment/submit", metrics, token).catch(() => {});
-  }, [submitAssessment, token]);
+  // Savollar serverdan; o'quvchiga to'g'ri javoblarsiz (correct = -1) keladi
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["diagnostic", token],
+    queryFn: () => api.get<DiagnosticData>("/api/diagnostic", token),
+    enabled: !!token,
+  });
+
+  // Server vaqtni o'zi qayd etadi — tezlik ko'rsatkichi shundan hisoblanadi
+  const handleStart = useCallback(() => {
+    void api.post("/api/diagnostic/start", {}, token).catch(() => {});
+  }, [token]);
+
+  // Javoblar serverda baholanadi; daraja va ochiladigan modullarni server hisoblaydi
+  const grade = useCallback(async (answers: number[]) => {
+    try {
+      const res = await api.post<{ correct: number; result: ServerAssessment }>("/api/assessment/submit", { answers }, token);
+      const r = res.result;
+      submitAssessment({ knowledge: r.knowledge, errors: r.errors, speed: r.speed }, r);
+      return res.correct;
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : "Javoblarni yuborib bo'lmadi, qayta urinib ko'ring");
+      throw err;
+    }
+  }, [message, submitAssessment, token]);
+
+  const handleFinish = useCallback(() => {}, []);
 
   if (!direction) {
     return <Result status="404" title="Yo'nalish topilmadi" extra={<Button onClick={() => setLocation("/learning")}>Orqaga</Button>} />;
@@ -30,6 +57,7 @@ export default function Diagnostic() {
 
   const base = `/learning/${direction.id}`;
   const { diagnostic } = direction;
+  const questions = data?.questions ?? [];
 
   return (
     <div className="page page-narrow">
@@ -43,11 +71,15 @@ export default function Diagnostic() {
         subtitle="Bilim darajangizni aniqlash uchun ixtiyoriy test."
       />
 
-      {userRole === "Teacher" ? (
+      {isLoading ? (
+        <Card><Skeleton active /></Card>
+      ) : isError || !data ? (
+        <Result status="warning" title="Savollarni yuklab bo'lmadi" extra={<Button onClick={() => void refetch()}>Qayta urinish</Button>} />
+      ) : userRole === "Teacher" ? (
         <Card title="Test savollari va to'g'ri javoblar">
           <Collapse
             ghost
-            items={diagnostic.questions.map((q, i) => ({
+            items={questions.map((q, i) => ({
               key: i,
               label: `${i + 1}. ${q.q}`,
               children: (
@@ -66,9 +98,11 @@ export default function Diagnostic() {
         <QuizRunner
           title={diagnostic.title}
           description={diagnostic.description}
-          questions={diagnostic.questions}
-          timeLimit={diagnostic.timeLimit}
+          questions={questions}
+          timeLimit={data.timeLimit}
           extraRules={["Natija asosida darajangiz va ochiladigan modullar yangilanadi"]}
+          onStart={handleStart}
+          grade={grade}
           onFinish={handleFinish}
           renderResult={(o, retry) => (
             <Card>

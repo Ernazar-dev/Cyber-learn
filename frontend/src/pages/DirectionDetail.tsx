@@ -120,7 +120,7 @@ export default function DirectionDetail() {
                   <IconTile icon={<QuestionCircleOutlined />} size={40} />
                   <Flex vertical>
                     <Text strong style={{ fontSize: 15 }}>{direction.diagnostic.title}</Text>
-                    <Text type="secondary" style={{ fontSize: 13 }}>Ixtiyoriy · {direction.diagnostic.questions.length} ta savol</Text>
+                    <Text type="secondary" style={{ fontSize: 13 }}>Ixtiyoriy · {direction.diagnostic.questionCount} ta savol</Text>
                   </Flex>
                 </Flex>
                 <Text type="secondary" style={{ fontSize: 13 }}>{direction.diagnostic.description}</Text>

@@ -4,9 +4,8 @@ import { CalendarOutlined, CheckCircleFilled, CheckOutlined, ClockCircleOutlined
 import { useAppStore } from "@/store/useAppStore";
 import type { Assignment } from "@/store/useAppStore";
 import { MODULE_PASSING_SCORE } from "@/data/curriculum";
-import { QuizRunner, type QuizOutcome } from "@/components/QuizRunner";
+import { QuizRunner } from "@/components/QuizRunner";
 import { percent } from "@/components/common";
-import api from "@/lib/api";
 
 const { Text, Title, Paragraph } = Typography;
 
@@ -14,7 +13,7 @@ const { Text, Title, Paragraph } = Typography;
 const SECONDS_PER_QUESTION = 60;
 
 function AssignmentBody({ assignment }: { assignment: Assignment }) {
-  const { completeAssignment, submitAssessment, token } = useAppStore();
+  const { completeAssignment, submitAssessment } = useAppStore();
   const { message } = App.useApp();
   const [saving, setSaving] = useState(false);
   const [moduleCompleted, setModuleCompleted] = useState(false);
@@ -39,15 +38,13 @@ function AssignmentBody({ assignment }: { assignment: Assignment }) {
       throw new Error("grade failed");
     }
     setModuleCompleted(res.result.moduleCompleted);
+    // Tayyorgarlik darajasini server o'zi (baholangan javoblardan) yangilaydi — shuni ko'rsatamiz
+    const a = res.result.assessment;
+    if (a) submitAssessment({ knowledge: a.knowledge, errors: a.errors, speed: a.speed }, a);
     return res.result.correct;
-  }, [assignment.id, completeAssignment, message]);
+  }, [assignment.id, completeAssignment, message, submitAssessment]);
 
-  // Natija fuzzy baholashga ham yuboriladi (tayyorgarlik darajasi shundan hisoblanadi)
-  const onFinish = useCallback(async (o: QuizOutcome) => {
-    const metrics = { knowledge: o.knowledge, errors: o.errors, speed: o.speed };
-    submitAssessment(metrics);
-    await api.post("/api/assessment/submit", metrics, token).catch(() => {});
-  }, [submitAssessment, token]);
+  const onFinish = useCallback(() => {}, []);
 
   return (
     <Flex vertical gap={16}>

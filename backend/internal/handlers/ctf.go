@@ -261,6 +261,13 @@ func SubmitCTFFlag(c *gin.Context) {
 	userIDVal, _ := c.Get("userID")
 	userID := userIDVal.(uint)
 
+	// Ochilmagan moduldagi topshiriqqa flag yuborib bo'lmaydi (ro'yxatda ham ko'rinmaydi)
+	var mp models.ModuleProgress
+	if err := database.DB.Where("user_id = ? AND module_id = ?", userID, challenge.ModuleID).First(&mp).Error; err != nil || !mp.Unlocked {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Bu modul hali ochilmagan"})
+		return
+	}
+
 	var existing models.CTFSolve
 	if database.DB.Where("user_id = ? AND challenge_id = ?", userID, challengeID).First(&existing).Error == nil {
 		c.JSON(http.StatusOK, gin.H{"correct": true, "alreadySolved": true, "message": "Siz bu challenge'ni allaqachon yechgansiz"})
@@ -273,7 +280,12 @@ func SubmitCTFFlag(c *gin.Context) {
 		return
 	}
 
-	database.DB.Create(&models.CTFSolve{UserID: userID, ChallengeID: uint(challengeID), SolvedAt: time.Now()})
+	// Bir vaqtda yuborilgan ikki so'rov ikkalasi ham "hali yechilmagan"ni ko'rishi mumkin —
+	// (user_id, challenge_id) noyob indeksi ikkinchisini rad etadi, XP esa faqat bir marta beriladi.
+	if err := database.DB.Create(&models.CTFSolve{UserID: userID, ChallengeID: uint(challengeID), SolvedAt: time.Now()}).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{"correct": true, "alreadySolved": true, "message": "Siz bu challenge'ni allaqachon yechgansiz"})
+		return
+	}
 	database.DB.Model(&models.User{}).Where("id = ?", userID).
 		Update("xp", gorm.Expr("xp + ?", challenge.Points))
 

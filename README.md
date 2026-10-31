@@ -24,7 +24,7 @@ cd frontend && npm install && npm run dev
    - `DATABASE_URL_UNPOOLED` — Neon'ning to'g'ridan-to'g'ri manzili
    - `TEACHER_PASSWORD` — o'qituvchi (`teacher`) paroli, kamida 8 belgi. Bo'sh qolsa bazadagi parol o'zgarmaydi.
    - `CERT_SIGNER_NAME` — sertifikatdagi imzo egasining ismi (bo'sh qolsa "CyberAI")
-   - `VITE_GOOGLE_AI_API_KEY` — AI yordamchi kaliti (ixtiyoriy; brauzerda ochiq ko'rinadi)
+   - `GOOGLE_AI_API_KEY` (backend) — AI yordamchi kaliti (ixtiyoriy). Faqat serverda turadi, brauzerga chiqmaydi.
 4. Deploy tugagach sayt `https://cyber-learn.onrender.com` (yoki Render bergan nom) manzilida ochiladi.
    Frontend va backend bir-birining manzilini Render orqali avtomatik oladi.
 

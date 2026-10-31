@@ -129,6 +129,15 @@ export interface AssignmentResult {
   /** Shu topshiriq bilan moduldagi barcha savolli topshiriqlar bajarilib, modul tugadi */
   moduleCompleted: boolean;
   message: string;
+  /** Server hisoblagan yangi tayyorgarlik darajasi (savolli topshiriqda) */
+  assessment?: ServerAssessment | null;
+}
+
+/** /api/assessment/submit va topshiriq natijasidagi fuzzy baho */
+export interface ServerAssessment extends FuzzyResult {
+  knowledge: number;
+  errors: number;
+  speed: number;
 }
 
 export interface Lesson {
@@ -206,7 +215,8 @@ export interface AppState {
   logoutUser: () => void;
   verifySession: () => Promise<void>;
   setRole: (role: "Student" | "Teacher") => void;
-  submitAssessment: (metrics: FuzzyMetrics) => void;
+  /** result — serverning fuzzy natijasi (daraja serverda hisoblanadi); berilmasa lokal hisoblanadi */
+  submitAssessment: (metrics: FuzzyMetrics, result?: FuzzyResult) => void;
   completeModule: (moduleId: number, score?: number) => void;
   updateFuzzyWeights: (weights: Partial<FuzzyWeights>) => void;
   fetchFuzzyWeights: () => Promise<void>;
@@ -441,10 +451,10 @@ export const useAppStore = create<AppState>()(
       
       setRole: (role) => set({ userRole: role }),
       
-      submitAssessment: (metrics) => set((state) => {
+      submitAssessment: (metrics, serverResult) => set((state) => {
         if (!state.currentUser || state.userRole !== "Student") return {};
-        
-        const result = runFuzzyEngine(metrics.knowledge, metrics.errors, metrics.speed, state.fuzzyWeights);
+
+        const result = serverResult ?? runFuzzyEngine(metrics.knowledge, metrics.errors, metrics.speed, state.fuzzyWeights);
         
         const newModules = state.moduleProgress.map(m => {
           let unlocked = m.unlocked;

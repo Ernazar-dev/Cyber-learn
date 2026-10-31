@@ -41,6 +41,9 @@ services:
         value: Ta'lim direktori
       - key: SEED_DEMO_DATA
         value: "false"
+      # AI yordamchi kaliti (Google AI Studio) — faqat backend'da, brauzerga chiqmaydi. Ixtiyoriy.
+      - key: GOOGLE_AI_API_KEY
+        sync: false
       # PUBLIC_API_URL kerak emas — Render RENDER_EXTERNAL_URL'ni o'zi beradi (sertifikat QR kodi)
 
   # ── Frontend (React + Vite, statik sayt) ─────────────────────────
@@ -61,8 +64,6 @@ services:
           type: web
           name: cyberai-backend
           property: host
-      - key: VITE_GOOGLE_AI_API_KEY
-        sync: false
     routes:
       # SPA: /learning/... kabi manzillar to'g'ridan-to'g'ri ochilganda ham index.html qaytsin
       - type: rewrite
@@ -73,3 +74,23 @@ services:
       - path: /assets/*
         name: Cache-Control
         value: public, max-age=31536000, immutable
+      # Xavfsizlik: saytni begona sahifa <iframe>'iga joylab bo'lmaydi (clickjacking),
+      # brauzer fayl turini taxmin qilmaydi, havola orqali manzil sizib chiqmaydi.
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+      # CSP: faqat o'z skriptlarimiz ishlaydi — XSS bo'lsa ham begona skript yuklanmaydi va
+      # ma'lumot faqat backend'ga (*.onrender.com) yuboriladi. Custom domen ulasangiz,
+      # backend manzilini connect-src'ga qo'shing. Stil 'unsafe-inline' — antd shuni talab qiladi.
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.onrender.com; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"

@@ -82,10 +82,8 @@ export default function App() {
   const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setVerifying(false);
-      return;
-    }
+    // Token bo'lmasa verifying boshidanoq false (useState(!!token))
+    if (!token) return;
     verifySession().finally(() => setVerifying(false));
     // Only re-run when the persisted token identity changes, not on every store update.
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -292,6 +292,7 @@ func CompleteAssignment(c *gin.Context) {
 	total := len(assignment.Questions)
 	correct := 0
 	passed := true
+	var assessment *assessmentResult
 	if !isTeacher && total > 0 {
 		if len(req.Answers) != total {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Javoblar soni savollar soniga mos emas"})
@@ -304,6 +305,14 @@ func CompleteAssignment(c *gin.Context) {
 		}
 		score := float64(correct) / float64(total)
 		passed = score >= modulePassingScore
+		// Tayyorgarlik darajasi (fuzzy) server baholagan natijadan yangilanadi. Tezlikni
+		// brauzer o'lchaydi va unga ishonib bo'lmaydi — diagnostikadagi tezlik saqlanadi.
+		var student models.User
+		if err := database.DB.First(&student, assignment.StudentID).Error; err == nil {
+			if res, err := applyAssessment(student, score, 1-score, student.Speed); err == nil {
+				assessment = &res
+			}
+		}
 		// Eng yaxshi natija saqlanadi — modul balli shulardan hisoblanadi
 		if score > assignment.Score {
 			database.DB.Model(&models.Assignment{}).Where("id = ?", assignment.ID).Update("score", score)
@@ -351,5 +360,6 @@ func CompleteAssignment(c *gin.Context) {
 		"total":           total,
 		"completed":       assignment.Completed || passed,
 		"moduleCompleted": moduleCompleted,
+		"assessment":      assessment,
 	})
 }

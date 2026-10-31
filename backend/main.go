@@ -71,11 +71,23 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// Render (va boshqa hostinglar) so'rovni proksi orqali uzatadi — haqiqiy mijoz IP'si
-	// X-Forwarded-For'da. Proksi orqali ishlamaydigan joyda TRUST_PROXY=false qiling.
-	if os.Getenv("TRUST_PROXY") == "false" {
-		_ = r.SetTrustedProxies(nil)
+	// Mijoz IP'si (rate limit shunga tayanadi). X-Forwarded-For'ni mijoz o'zi yozib yubora oladi —
+	// Render uni tozalamaydi, shuning uchun unga ishonilmaydi. Render oldida doim Cloudflare turadi
+	// va u haqiqiy IP'ni True-Client-IP'ga yozadi (mijoz uni soxtalashtira olmaydi).
+	// Boshqa hostingda: CLIENT_IP_HEADER=<sarlavha nomi>; bo'sh bo'lsa — TCP ulanish manzili.
+	_ = r.SetTrustedProxies(nil)
+	if h := os.Getenv("CLIENT_IP_HEADER"); h != "" {
+		r.TrustedPlatform = h
+	} else if os.Getenv("RENDER") != "" {
+		r.TrustedPlatform = "True-Client-IP"
 	}
+
+	// Har bir javobga xavfsizlik sarlavhalari, JSON tanasi hajmi chegarasi va IP bo'yicha
+	// umumiy limit — bitta manbadan so'rov oqimi serverni bo'g'ib qo'ymasin. Limit keng:
+	// maktabda butun sinf bitta IP orqali chiqadi.
+	r.Use(middleware.SecurityHeaders())
+	r.Use(middleware.BodyLimit(1 << 20))
+	r.Use(middleware.RateLimit(1500, time.Minute))
 
 	// Health check
 	// Backend manzili brauzerda ochilganda 404 emas, tushunarli javob
@@ -134,10 +146,15 @@ func main() {
 			protected.GET("/ctf", handlers.GetAllCTFChallenges)
 			protected.POST("/ctf", middleware.TeacherOnly(), handlers.CreateCTFChallenge)
 			protected.DELETE("/ctf/:id", middleware.TeacherOnly(), handlers.DeleteCTFChallenge)
-			protected.POST("/ctf/:id/submit", handlers.SubmitCTFFlag)
+			// Flag'ni tanlab topish (brute force) va bcrypt orqali CPU'ni band qilishga qarshi
+			protected.POST("/ctf/:id/submit", middleware.RateLimitUser(20, time.Minute), handlers.SubmitCTFFlag)
 
 			// Assessment (fuzzy)
-			protected.POST("/assessment/submit", handlers.SubmitAssessment)
+			// Diagnostika: savollar va baholash serverda. Javobni tez-tez qayta yuborib
+			// to'g'risini terib topmaslik uchun topshirish soni cheklangan.
+			protected.GET("/diagnostic", handlers.GetDiagnostic)
+			protected.POST("/diagnostic/start", handlers.StartDiagnostic)
+			protected.POST("/assessment/submit", middleware.RateLimitUser(10, 10*time.Minute), handlers.SubmitAssessment)
 
 			// Lessons
 			protected.GET("/lessons", handlers.GetLessons)
@@ -149,10 +166,15 @@ func main() {
 			protected.GET("/assignments", handlers.GetAssignments)
 			protected.GET("/assignments/:id", handlers.GetAssignment)
 			protected.POST("/assignments", middleware.TeacherOnly(), handlers.CreateAssignment)
-			protected.POST("/assignments/:id/complete", handlers.CompleteAssignment)
+			// Javoblarni cheksiz qayta yuborib to'g'risini "terib" topishni sekinlashtiradi
+			protected.POST("/assignments/:id/complete", middleware.RateLimitUser(20, time.Minute), handlers.CompleteAssignment)
 
 			// Analytics
 			protected.GET("/analytics", handlers.GetAnalytics)
+
+			// AI yordamchi — Gemini kaliti faqat serverda
+			protected.GET("/assistant/status", handlers.AssistantStatus)
+			protected.POST("/assistant", middleware.RateLimitUser(15, time.Minute), handlers.AskAssistant)
 
 			// Fuzzy weights
 			protected.GET("/fuzzy-weights", handlers.GetFuzzyWeights)

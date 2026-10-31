@@ -38,6 +38,8 @@ interface QuizRunnerProps {
    * Xato tashlasa, test yakunlanmaydi — o'quvchi javoblarini yo'qotmasdan qayta yuborishi mumkin.
    */
   grade?: (answers: number[]) => Promise<number>;
+  /** Test boshlanganda (masalan, server vaqtni qayd etishi uchun) */
+  onStart?: () => void;
   onFinish: (outcome: QuizOutcome) => void | Promise<void>;
   renderResult: (outcome: QuizOutcome, retry: () => void) => ReactNode;
 }
@@ -55,7 +57,7 @@ function formatTime(sec: number) {
 
 export function QuizRunner({
   title, description, questions, timeLimit, timed = true, passScore, extraRules = [],
-  startLabel = "Testni boshlash", blockedReason, grade, onFinish, renderResult,
+  startLabel = "Testni boshlash", blockedReason, grade, onStart, onFinish, renderResult,
 }: QuizRunnerProps) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [index, setIndex] = useState(0);
@@ -134,6 +136,7 @@ export function QuizRunner({
     setIndex(0);
     setOutcome(null);
     setPhase("running");
+    onStart?.();
   };
 
   const choose = (option: number) => {

@@ -25,7 +25,8 @@ type RankingEntry struct {
 func GetRankings(c *gin.Context) {
 	limit := 500
 	if v := c.Query("limit"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+		// Ochiq endpoint — limit 500 dan oshmaydi (katta so'rov bilan bazani band qilmasin)
+		if n, err := strconv.Atoi(v); err == nil && n > 0 && n < limit {
 			limit = n
 		}
 	}

@@ -3,7 +3,8 @@ import { Avatar, Badge, Button, Drawer, Flex, FloatButton, Input, Tag, Typograph
 import { MessageOutlined, RobotOutlined, SendOutlined } from "@ant-design/icons";
 import { useAppStore } from "@/store/useAppStore";
 import { translateLevel } from "@/lib/utils";
-import { askGeminiAssistant, hasGeminiApiKey, type AssistantMessage } from "@/lib/geminiAssistant";
+import { useQuery } from "@tanstack/react-query";
+import { askGeminiAssistant, fetchAssistantEnabled, type AssistantMessage } from "@/lib/geminiAssistant";
 
 const { Text } = Typography;
 
@@ -22,12 +23,18 @@ export function AIAssistant() {
   ]);
   const nextId = useRef(2);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const connected = hasGeminiApiKey();
-
   const {
     currentUser, userRole, hasCompletedInitialTest, currentLevel, readinessScore, fuzzyMetrics,
-    moduleProgress, assignments, lessons,
+    moduleProgress, assignments, lessons, token,
   } = useAppStore();
+
+  // Kalit serverda — yordamchi sozlanganmi, backend aytadi (oyna ochilganda bir marta)
+  const { data: connected = false } = useQuery({
+    queryKey: ["assistant-status", token],
+    queryFn: () => fetchAssistantEnabled(token),
+    enabled: open && !!token,
+    staleTime: 5 * 60_000,
+  });
 
   const context = useMemo(() => {
     const completed = moduleProgress.filter((m) => m.completed).map((m) => m.title);
@@ -63,7 +70,7 @@ export function AIAssistant() {
     setInput("");
     setLoading(true);
     try {
-      const reply = await askGeminiAssistant(next.map(({ role, text: t }) => ({ role, text: t })), context);
+      const reply = await askGeminiAssistant(next.map(({ role, text: t }) => ({ role, text: t })), context, token);
       setMessages((cur) => [...cur, { id: nextId.current++, role: "model", text: reply }]);
     } catch (err) {
       setMessages((cur) => [...cur, {
