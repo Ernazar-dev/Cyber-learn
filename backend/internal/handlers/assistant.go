@@ -41,7 +41,7 @@ func assistantModel() string {
 	if m := strings.TrimSpace(os.Getenv("GEMINI_MODEL")); m != "" {
 		return m
 	}
-	return "gemini-2.5-flash"
+	return "gemini-3.8-flash"
 }
 
 // Kunlik hisob (xotirada; server qayta ishga tushsa nolga qaytadi — bu yetarli)
