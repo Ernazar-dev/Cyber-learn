@@ -2,21 +2,23 @@ import { useCallback, useMemo, useState } from "react";
 import { App, Alert, Button, Empty, Flex, Result, Segmented, Tag, Typography } from "antd";
 import { CalendarOutlined, CheckCircleFilled, CheckOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import { useAppStore } from "@/store/useAppStore";
-import type { Assignment } from "@/store/useAppStore";
+import type { Assignment, FuzzyPerformance } from "@/store/useAppStore";
 import { MODULE_PASSING_SCORE } from "@/data/curriculum";
 import { QuizRunner } from "@/components/QuizRunner";
 import { percent } from "@/components/common";
+import { FuzzyPerformanceCard } from "@/components/FuzzyEvaluation";
 
 const { Text, Title, Paragraph } = Typography;
 
-/** Bitta savolga ~1 daqiqa — taymersiz rejimda faqat "tezlik" me'yori uchun */
+/** Bitta savolga ~1 daqiqa — taymersiz rejimda faqat "tezlik" me'yori uchun (backend bilan bir xil) */
 const SECONDS_PER_QUESTION = 60;
 
 function AssignmentBody({ assignment }: { assignment: Assignment }) {
-  const { completeAssignment, submitAssessment } = useAppStore();
+  const { completeAssignment, submitAssessment, startAssignment } = useAppStore();
   const { message } = App.useApp();
   const [saving, setSaving] = useState(false);
   const [moduleCompleted, setModuleCompleted] = useState(false);
+  const [performance, setPerformance] = useState<FuzzyPerformance | null>(null);
   // To'g'ri javoblar o'quvchiga kelmaydi (-1) — baholash `grade` orqali serverda
   const questions = useMemo(
     () => assignment.questions.map((q) => ({ q: q.question, options: q.options, correct: q.correctAnswer })),
@@ -38,6 +40,7 @@ function AssignmentBody({ assignment }: { assignment: Assignment }) {
       throw new Error("grade failed");
     }
     setModuleCompleted(res.result.moduleCompleted);
+    setPerformance(res.result.performance ?? null);
     // Tayyorgarlik darajasini server o'zi (baholangan javoblardan) yangilaydi — shuni ko'rsatamiz
     const a = res.result.assessment;
     if (a) submitAssessment({ knowledge: a.knowledge, errors: a.errors, speed: a.speed }, a);
@@ -45,6 +48,7 @@ function AssignmentBody({ assignment }: { assignment: Assignment }) {
   }, [assignment.id, completeAssignment, message, submitAssessment]);
 
   const onFinish = useCallback(() => {}, []);
+  const onStart = useCallback(() => startAssignment(assignment.id), [assignment.id, startAssignment]);
 
   return (
     <Flex vertical gap={16}>
@@ -75,6 +79,7 @@ function AssignmentBody({ assignment }: { assignment: Assignment }) {
           passScore={MODULE_PASSING_SCORE}
           startLabel={assignment.completed ? "Qayta yechish" : "Boshlash"}
           grade={grade}
+          onStart={onStart}
           onFinish={onFinish}
           renderResult={(o, retry) => {
             const passed = o.knowledge >= MODULE_PASSING_SCORE;
@@ -85,7 +90,12 @@ function AssignmentBody({ assignment }: { assignment: Assignment }) {
                   ? "Modul tugatildi — sertifikatingiz tayyor!"
                   : passed ? "Topshiriq bajarildi" : "Natija yetarli emas"}
                 subTitle={`${o.total} ta savoldan ${o.correct} ta to'g'ri (${percent(o.knowledge)}).${passed ? "" : ` Kamida ${percent(MODULE_PASSING_SCORE)} kerak — nazariyani qayta ko'rib chiqing.`}`}
-                extra={<Button onClick={retry}>Qayta urinish</Button>}
+                extra={
+                  <Flex vertical gap={16} align="center">
+                    {performance && <div style={{ width: "100%", maxWidth: 640 }}><FuzzyPerformanceCard perf={performance} /></div>}
+                    <Button onClick={retry}>Qayta urinish</Button>
+                  </Flex>
+                }
               />
             );
           }}

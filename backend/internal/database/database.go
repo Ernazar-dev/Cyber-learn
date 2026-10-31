@@ -91,7 +91,7 @@ func Init() {
 // tushishda AutoMigrate bir marta bajariladi. O'zgarmagan bo'lsa, AutoMigrate o'tkazib yuboriladi
 // (masofaviy bazada u ~100 ta tekshiruv so'rovi yuborib, ishga tushishni ~1 daqiqaga cho'zadi).
 // DB_FORCE_MIGRATE=true bilan majburan bajarish mumkin.
-const schemaVersion = "2026-10-31.2"
+const schemaVersion = "2026-10-31.3"
 
 type schemaMeta struct {
 	Key   string `gorm:"primaryKey"`

@@ -1199,3 +1199,216 @@ h4.ant-typography {
     transform: none;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   Tizimning ishlash sxemasi (AI dvigateli) — vertikal oqim
+   ════════════════════════════════════════════════════════════════ */
+.flow-scheme {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #e6edf7;
+  border-radius: 16px;
+  background: #fbfcfe;
+}
+
+.flow-step {
+  --step: #2563eb;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  /* Juda och tus — rang faqat raqam va chap chiziqda seziladi */
+  background: color-mix(in srgb, var(--step) 5%, #fff);
+  border: 1px solid color-mix(in srgb, var(--step) 14%, #fff);
+  border-left: 3px solid var(--step);
+  transition: transform 0.2s var(--ease-premium), box-shadow 0.2s var(--ease-premium);
+}
+
+.flow-step:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -12px color-mix(in srgb, var(--step) 60%, transparent);
+}
+
+.flow-step--current {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--step) 16%, transparent);
+}
+
+.flow-step__num {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--step);
+  background: color-mix(in srgb, var(--step) 12%, #fff);
+}
+
+.flow-step__icon {
+  flex: none;
+  font-size: 18px;
+  color: color-mix(in srgb, var(--step) 70%, #94a3b8);
+}
+
+.flow-scheme__arrow {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.flow-scheme__loop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.flow-scheme__loop .anticon {
+  font-size: 18px;
+}
+
+@media (max-width: 576px) {
+  .flow-scheme { padding: 12px; }
+  .flow-step { padding: 12px 14px; gap: 10px; }
+  .flow-step__icon { display: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Ta'lim yo'nalishlari — yumshoq gradientli panel
+   ════════════════════════════════════════════════════════════════ */
+.dir-panel {
+  position: relative;
+  padding: 24px;
+  border-radius: 20px;
+  border: 1px solid #e3ebf7;
+  /* Ko'k → moviy → och binafsha; juda och, loyihaning ko'k palitrasida */
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(34, 184, 230, 0.10) 0%, transparent 55%),
+    radial-gradient(100% 80% at 100% 100%, rgba(124, 58, 237, 0.07) 0%, transparent 60%),
+    linear-gradient(135deg, #f4f9ff 0%, #f7f9fe 100%);
+  box-shadow: var(--shadow-card);
+}
+
+.dir-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #22b8e6;
+  box-shadow: 0 0 0 4px rgba(34, 184, 230, 0.15);
+}
+
+.dir-hero-num {
+  font-family: var(--font-display);
+  font-size: 56px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #0e1a33;
+}
+
+.dir-hero-num small {
+  font-size: 22px;
+  font-weight: 600;
+  color: #475569;
+  margin-left: 2px;
+}
+
+.dir-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #e3ebf7;
+}
+
+.dir-pill b { font-weight: 700; color: #0e1a33; }
+.dir-pill--blue { background: #e8f0ff; border-color: #d4e2ff; }
+.dir-pill--green { background: #e7f7ee; border-color: #cdeedb; }
+.dir-pill--amber { background: #fdf3dc; border-color: #f6e3b4; }
+
+.dir-box {
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(6px);
+}
+
+.dir-tile {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e9eff8;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-premium), box-shadow 0.2s var(--ease-premium), border-color 0.2s;
+}
+
+.dir-tile:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #d4e2ff;
+  box-shadow: 0 8px 20px -14px rgba(37, 87, 214, 0.45);
+}
+
+.dir-tile:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.dir-tile__icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.dir-next {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-premium);
+}
+
+.dir-next:hover { transform: translateY(-1px); }
+.dir-next--blue { background: #eaf2ff; border-color: #d9e6ff; }
+.dir-next--violet { background: #f1edfd; border-color: #e4dcfb; }
+.dir-next--amber { background: #fdf5e2; border-color: #f6e8c4; }
+
+@media (max-width: 576px) {
+  .dir-panel { padding: 16px; border-radius: 16px; }
+  .dir-hero-num { font-size: 44px; }
+  .dir-box { padding: 14px; }
+}

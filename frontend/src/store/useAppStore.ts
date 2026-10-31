@@ -41,6 +41,9 @@ interface BackendModuleProgress {
   unlocked: boolean;
   completed: boolean;
   score: number;
+  fuzzyScore?: number;
+  hasFuzzy?: boolean;
+  readiness?: Readiness;
 }
 
 interface BackendStudent {
@@ -59,6 +62,7 @@ interface BackendStudent {
   hasFuzzyResult: boolean;
   lastFuzzyResult: BackendFuzzyResult | null;
   moduleProgress: BackendModuleProgress[] | null;
+  finalFuzzy?: FinalFuzzy | null;
 }
 
 interface BackendAssignmentQuestion {
@@ -78,6 +82,9 @@ interface BackendAssignment {
   targetModuleId: number;
   assignmentType: "Nazariy" | "Amaliy";
   completed: boolean;
+  score?: number;
+  fuzzyScore?: number;
+  attempts?: number;
   dateAssigned: string;
   questions: BackendAssignmentQuestion[] | null;
 }
@@ -111,6 +118,41 @@ export interface ModuleProgress {
   unlocked: boolean;
   completed: boolean;
   score?: number;
+  /** Modul bo'yicha fuzzy o'zlashtirish bahosi (topshiriqlar fuzzy baholari o'rtachasi) */
+  fuzzyScore?: number;
+  hasFuzzy?: boolean;
+  readiness?: Readiness;
+}
+
+/** Hujjatdagi "Fuzzy итоговая оценка": готов / частично готов / не готов */
+export type Readiness = "ready" | "partial" | "not_ready";
+/** Hujjatdagi "нечеткое решение перехода" */
+export type FuzzyDecision = "advance" | "repeat" | "remediate";
+
+export interface Membership {
+  low: number;
+  medium: number;
+  high: number;
+}
+
+/** Bitta urinishning fuzzy o'zlashtirish bahosi (server hisoblaydi) */
+export interface FuzzyPerformance {
+  score: number;
+  knowledge: number;
+  errors: number;
+  speed: number;
+  knowledgeMu: Membership;
+  errorsMu: Membership;
+  speedMu: Membership;
+  output: Membership;
+  decision: FuzzyDecision;
+  readiness: Readiness;
+}
+
+export interface FinalFuzzy {
+  score: number;
+  readiness: Readiness;
+  modules?: number;
 }
 
 export interface AssignmentQuestion {
@@ -131,6 +173,10 @@ export interface AssignmentResult {
   message: string;
   /** Server hisoblagan yangi tayyorgarlik darajasi (savolli topshiriqda) */
   assessment?: ServerAssessment | null;
+  /** Shu urinishning fuzzy o'zlashtirish bahosi (% bilan yonma-yon) */
+  performance?: FuzzyPerformance | null;
+  /** Modulning yangilangan fuzzy bahosi */
+  moduleFuzzy?: FinalFuzzy | null;
 }
 
 /** /api/assessment/submit va topshiriq natijasidagi fuzzy baho */
@@ -164,6 +210,11 @@ export interface Assignment {
   studentName: string;
   targetModuleId: number;
   completed: boolean;
+  /** Eng yaxshi % natija (0..1) */
+  score: number;
+  /** Eng yaxshi fuzzy o'zlashtirish bahosi (0..1); attempts=0 bo'lsa hali yechilmagan */
+  fuzzyScore: number;
+  attempts: number;
   dateAssigned: string;
   questions: AssignmentQuestion[];
   description?: string;
@@ -185,6 +236,8 @@ export interface Student {
   hasCompletedInitialTest: boolean;
   moduleProgress: ModuleProgress[];
   lastFuzzyResult: FuzzyResult | null;
+  /** Yakuniy fuzzy baho (tayyor / qisman / tayyor emas) — faqat o'qituvchi ro'yxatida keladi */
+  finalFuzzy?: FinalFuzzy | null;
 }
 
 export interface UserSession {
@@ -225,6 +278,8 @@ export interface AppState {
   fetchAssignments: () => Promise<void>;
   addAssignment: (title: string, studentId: number, targetModuleId: number, questions?: AssignmentQuestion[], description?: string, assignmentType?: "Nazariy" | "Amaliy") => Promise<{ success: boolean; message?: string }>;
   completeAssignment: (assignmentId: number, answers?: number[]) => Promise<{ success: boolean; message?: string; result?: AssignmentResult }>;
+  /** Savollarni yechish boshlandi — server vaqtni qayd etadi (fuzzy bahodagi "tezlik") */
+  startAssignment: (assignmentId: number) => void;
   fetchLessons: () => Promise<void>;
   addLesson: (lesson: Omit<Lesson, 'id' | 'createdAt' | 'readByStudents'>) => Promise<{ success: boolean; message?: string }>;
   deleteLesson: (lessonId: number) => Promise<{ success: boolean; message?: string }>;
@@ -289,6 +344,7 @@ function backendStudentToStudent(s: BackendStudent): Student {
     hasCompletedInitialTest: s.hasCompletedInitialTest,
     moduleProgress: s.moduleProgress ?? [],
     lastFuzzyResult: s.hasFuzzyResult && s.lastFuzzyResult ? s.lastFuzzyResult : null,
+    finalFuzzy: s.finalFuzzy ?? null,
   };
 }
 
@@ -300,6 +356,9 @@ function backendAssignmentToAssignment(a: BackendAssignment): Assignment {
     studentName: a.studentName,
     targetModuleId: a.targetModuleId,
     completed: a.completed,
+    score: a.score ?? 0,
+    fuzzyScore: a.fuzzyScore ?? 0,
+    attempts: a.attempts ?? 0,
     dateAssigned: a.dateAssigned.slice(0, 10),
     questions: (a.questions ?? []).map(q => ({
       id: q.id,
@@ -682,15 +741,22 @@ export const useAppStore = create<AppState>()(
           const result = await api.post<AssignmentResult>(
             `/api/assignments/${assignmentId}/complete`, answers ? { answers } : {}, token,
           );
-          if (result.completed) {
-            set((state) => ({
-              assignments: state.assignments.map(a =>
-                a.id === assignmentId ? { ...a, completed: true } : a
-              ),
-            }));
-          }
-          if (result.moduleCompleted) {
-            // Modul tugadi, keyingisi ochildi — progress'ni serverdan qayta olamiz
+          const perf = result.performance;
+          const pct = result.total ? result.correct / result.total : 0;
+          set((state) => ({
+            assignments: state.assignments.map(a =>
+              a.id === assignmentId
+                ? {
+                    ...a,
+                    completed: a.completed || result.completed,
+                    score: Math.max(a.score, pct),
+                    ...(perf ? { fuzzyScore: a.attempts ? Math.max(a.fuzzyScore, perf.score) : perf.score, attempts: a.attempts + 1 } : {}),
+                  }
+                : a
+            ),
+          }));
+          if (result.moduleCompleted || result.moduleFuzzy) {
+            // Modul tugadi yoki uning fuzzy bahosi o'zgardi — progress'ni serverdan qayta olamiz
             try {
               const moduleProgress = await api.get<BackendModuleProgress[]>("/api/students/me/progress", token);
               set({ moduleProgress });
@@ -700,6 +766,11 @@ export const useAppStore = create<AppState>()(
         } catch (err) {
           return { success: false, message: err instanceof Error ? err.message : "Xatolik yuz berdi" };
         }
+      },
+
+      startAssignment: (assignmentId) => {
+        const { token } = get();
+        void api.post(`/api/assignments/${assignmentId}/start`, {}, token).catch(() => {});
       },
 
       fetchLessons: async () => {

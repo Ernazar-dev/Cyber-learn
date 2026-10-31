@@ -6,6 +6,7 @@ import { DeleteOutlined, EyeOutlined, UserOutlined } from "@ant-design/icons";
 import { useAppStore } from "@/store/useAppStore";
 import type { Student } from "@/store/useAppStore";
 import { LevelTag, PageHeader } from "@/components/common";
+import { FuzzyBadge } from "@/components/FuzzyEvaluation";
 
 const { Text } = Typography;
 
@@ -63,6 +64,12 @@ export default function Students() {
       dataIndex: "fuzzyScore",
       sorter: (a, b) => a.fuzzyScore - b.fuzzyScore,
       render: (v: number) => <Progress percent={Math.round(v * 100)} size="small" strokeColor="#2563eb" style={{ minWidth: 140 }} />,
+    },
+    {
+      title: "Fuzzy yakuniy baho",
+      key: "finalFuzzy",
+      sorter: (a, b) => (a.finalFuzzy?.score ?? -1) - (b.finalFuzzy?.score ?? -1),
+      render: (_: unknown, s: Student) => <FuzzyBadge score={s.finalFuzzy?.score} readiness={s.finalFuzzy?.readiness} />,
     },
     {
       title: "Modullar",

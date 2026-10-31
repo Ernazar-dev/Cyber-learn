@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"cyberai-backend/internal/database"
+	"cyberai-backend/internal/fuzzy"
 	"cyberai-backend/internal/models"
 
 	"github.com/gin-gonic/gin"
@@ -53,6 +54,9 @@ type AssignmentResponse struct {
 	TargetModuleID uint                         `json:"targetModuleId"`
 	AssignmentType string                       `json:"assignmentType"`
 	Completed      bool                         `json:"completed"`
+	Score          float64                      `json:"score"`
+	FuzzyScore     float64                      `json:"fuzzyScore"`
+	Attempts       int                          `json:"attempts"`
 	DateAssigned   time.Time                    `json:"dateAssigned"`
 	Questions      []AssignmentQuestionResponse `json:"questions"`
 }
@@ -72,6 +76,9 @@ func buildAssignmentResponse(a models.Assignment, withAnswers bool) AssignmentRe
 		TargetModuleID: a.TargetModuleID,
 		AssignmentType: assignmentType,
 		Completed:      a.Completed,
+		Score:          a.Score,
+		FuzzyScore:     a.FuzzyScore,
+		Attempts:       a.Attempts,
 		DateAssigned:   a.DateAssigned,
 		Questions:      []AssignmentQuestionResponse{},
 	}
@@ -293,29 +300,56 @@ func CompleteAssignment(c *gin.Context) {
 	correct := 0
 	passed := true
 	var assessment *assessmentResult
+	var performance *fuzzy.Performance
+	var moduleFuzzy *FinalFuzzyResult
 	if !isTeacher && total > 0 {
 		if len(req.Answers) != total {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Javoblar soni savollar soniga mos emas"})
 			return
 		}
+		wrong := 0
 		for i, q := range assignment.Questions {
-			if req.Answers[i] == q.CorrectAnswer {
+			switch {
+			case req.Answers[i] == q.CorrectAnswer:
 				correct++
+			case req.Answers[i] >= 0:
+				wrong++ // javobsiz (-1) savol xato emas, lekin bilim ham emas
 			}
 		}
 		score := float64(correct) / float64(total)
 		passed = score >= modulePassingScore
-		// Tayyorgarlik darajasi (fuzzy) server baholagan natijadan yangilanadi. Tezlikni
-		// brauzer o'lchaydi va unga ishonib bo'lmaydi — diagnostikadagi tezlik saqlanadi.
+
 		var student models.User
-		if err := database.DB.First(&student, assignment.StudentID).Error; err == nil {
-			if res, err := applyAssessment(student, score, 1-score, student.Speed); err == nil {
+		studentErr := database.DB.First(&student, assignment.StudentID).Error
+		// Tezlik serverda o'lchanadi (POST /start); qayd etilmagan bo'lsa — diagnostikadagi tezlik
+		speed, ok := takeAssignmentSpeed(userID.(uint), assignment.ID, total)
+		if !ok {
+			speed = student.Speed
+		}
+
+		// Tayyorgarlik darajasi (fuzzy) server baholagan natijadan yangilanadi
+		if studentErr == nil {
+			if res, err := applyAssessment(student, score, 1-score, speed); err == nil {
 				assessment = &res
 			}
 		}
-		// Eng yaxshi natija saqlanadi — modul balli shulardan hisoblanadi
+
+		// Fuzzy o'zlashtirish bahosi — % bilan yonma-yon (mijoz hujjatidagi model)
+		w := loadFuzzyWeights()
+		perf := fuzzy.EvaluatePerformance(score, float64(wrong)/float64(total), speed, w)
+		performance = &perf
+
+		// Eng yaxshi natijalar saqlanadi — modul balli (% va fuzzy) shulardan hisoblanadi
+		updates := map[string]interface{}{"attempts": gorm.Expr("attempts + 1")}
 		if score > assignment.Score {
-			database.DB.Model(&models.Assignment{}).Where("id = ?", assignment.ID).Update("score", score)
+			updates["score"] = score
+		}
+		if perf.Score > assignment.FuzzyScore || assignment.Attempts == 0 {
+			updates["fuzzy_score"] = perf.Score
+		}
+		database.DB.Model(&models.Assignment{}).Where("id = ?", assignment.ID).Updates(updates)
+		if ms, ok := updateModuleFuzzy(assignment.StudentID, assignment.TargetModuleID); ok {
+			moduleFuzzy = &FinalFuzzyResult{Score: ms, Readiness: fuzzy.ReadinessOf(ms, w)}
 		}
 	}
 
@@ -361,5 +395,8 @@ func CompleteAssignment(c *gin.Context) {
 		"completed":       assignment.Completed || passed,
 		"moduleCompleted": moduleCompleted,
 		"assessment":      assessment,
+		// Fuzzy o'zlashtirish bahosi (shu urinish) va modulning yangilangan fuzzy bahosi
+		"performance": performance,
+		"moduleFuzzy": moduleFuzzy,
 	})
 }

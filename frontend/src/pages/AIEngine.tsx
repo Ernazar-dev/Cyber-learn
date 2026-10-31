@@ -1,7 +1,8 @@
-import { useEffect } from "react";
-import { App, Button, Card, Col, Flex, Row, Slider, Space, Steps, Tag, Tooltip, Typography } from "antd";
+import { Fragment, useEffect, type CSSProperties } from "react";
+import { App, Button, Card, Col, Flex, Row, Slider, Space, Tag, Tooltip, Typography } from "antd";
 import {
-  AimOutlined, CalculatorOutlined, ExperimentOutlined, FormOutlined, NodeIndexOutlined, ReloadOutlined, SaveOutlined,
+  ArrowDownOutlined, BarChartOutlined, CalculatorOutlined, CodeOutlined, ExperimentOutlined, FormOutlined, ReadOutlined,
+  ReloadOutlined, SaveOutlined, SyncOutlined,
 } from "@ant-design/icons";
 import { useAppStore } from "@/store/useAppStore";
 import { IconTile, LevelTag, PageHeader } from "@/components/common";
@@ -25,12 +26,44 @@ const THRESHOLDS: { key: WeightKey; label: string; desc: string; min: number; ma
 
 const LEVEL_COLORS = { beginner: "#f59e0b", intermediate: "#2563eb", advanced: "#16a34a" };
 
+/** O'quv sikli: 5 bosqich ketma-ket, oxirida keyingi siklga qaytiladi */
 const STAGES = [
-  { icon: <FormOutlined />, title: "Diagnostika", desc: "Kirish testi: bilim, xatolar va tezlik o'lchanadi." },
-  { icon: <ExperimentOutlined />, title: "Fuzzy baholash", desc: "Ko'rsatkichlar past / o'rta / yuqori to'plamlarga ajratiladi." },
-  { icon: <NodeIndexOutlined />, title: "ANFIS yo'nalish", desc: "Qoidalar asosida mos modullar ochiladi." },
-  { icon: <AimOutlined />, title: "O'tish qarori", desc: "Natija yuqori bo'lsa — oldinga, o'rta bo'lsa — takrorlash." },
+  { icon: <FormOutlined />, title: "Diagnostika", desc: "Kirish testi va boshlang'ich bilim darajasi", color: "#2563eb" },
+  { icon: <ReadOutlined />, title: "O'rganish", desc: "Nazariya + AI yordamchi + Virtual laboratoriya", color: "#0891b2" },
+  { icon: <CodeOutlined />, title: "Amaliy faoliyat", desc: "CTF mashqlari + Amaliy topshiriqlar", color: "#7c3aed" },
+  { icon: <ExperimentOutlined />, title: "Baholash", desc: "Topshiriq natijasi (%) + Fuzzy baho", color: "#d97706" },
+  { icon: <BarChartOutlined />, title: "Natijalarni tahlil qilish", desc: "Tayyorlik darajasi + O'tish qarori: oldinga, takrorlash yoki remediatsiya", color: "#db2777" },
 ];
+
+/** Tizimning ishlash sxemasi — vertikal oqim, bosqichlar orasida strelka */
+function WorkflowScheme({ current }: { current?: number }) {
+  return (
+    <div className="flow-scheme">
+      {STAGES.map((s, i) => (
+        <Fragment key={s.title}>
+          {i > 0 && <ArrowDownOutlined className="flow-scheme__arrow" aria-hidden />}
+          <div
+            className={`flow-step${current === i ? " flow-step--current" : ""}`}
+            style={{ "--step": s.color } as CSSProperties}
+          >
+            <span className="flow-step__num">{i + 1}</span>
+            <Flex vertical gap={2} style={{ minWidth: 0, flex: 1 }}>
+              <Text strong style={{ fontSize: 15.5 }}>{s.title}</Text>
+              <Text style={{ fontSize: 13.5, color: "#475569" }}>{s.desc}</Text>
+            </Flex>
+            {current === i
+              ? <Tag color="blue" bordered={false} style={{ marginInlineEnd: 0 }}>Siz shu yerdasiz</Tag>
+              : <span className="flow-step__icon" aria-hidden>{s.icon}</span>}
+          </div>
+        </Fragment>
+      ))}
+      <div className="flow-scheme__loop">
+        <SyncOutlined />
+        <span>Keyingi o'quv sikliga qaytish</span>
+      </div>
+    </div>
+  );
+}
 
 /** Daraja shkalasi: chegaralar bo'yicha uch rangli chiziq va (ixtiyoriy) o'quvchi belgisi */
 function LevelScale({ beginner, intermediate, marker }: { beginner: number; intermediate: number; marker?: number }) {
@@ -114,7 +147,8 @@ export default function AIEngine() {
     </div>
   );
 
-  const currentStage = isTeacher ? STAGES.length : hasCompletedInitialTest ? STAGES.length : 0;
+  // Diagnostikadan o'tmagan o'quvchiga birinchi bosqich belgilanadi
+  const currentStage = !isTeacher && !hasCompletedInitialTest ? 0 : undefined;
 
   return (
     <div className="page">
@@ -164,13 +198,8 @@ export default function AIEngine() {
       </Card>
 
       {/* Ishlash sxemasi — 4 bosqich */}
-      <Card title="Tizimning ishlash sxemasi">
-        <Steps
-          current={currentStage}
-          labelPlacement="vertical"
-          items={STAGES.map((s) => ({ title: s.title, description: s.desc, icon: <IconTile icon={s.icon} size={36} /> }))}
-          responsive
-        />
+      <Card title="Tizimning ishlash sxemasi" extra={<Text type="secondary" style={{ fontSize: 12.5 }}>Har bir o'quv sikli 5 bosqichdan iborat</Text>}>
+        <WorkflowScheme current={currentStage} />
       </Card>
 
       {/* Parametrlar va model */}

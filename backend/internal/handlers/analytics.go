@@ -113,15 +113,10 @@ func getStudentAnalytics(c *gin.Context, userID uint) {
 
 	var progresses []models.ModuleProgress
 	database.DB.Where("user_id = ?", userID).Preload("Module").Order("module_id asc").Find(&progresses)
+	w := loadFuzzyWeights()
 	var mpResp []ModuleProgressResponse
 	for _, mp := range progresses {
-		mpResp = append(mpResp, ModuleProgressResponse{
-			ID:        mp.ModuleID,
-			Title:     mp.Module.Title,
-			Unlocked:  mp.Unlocked,
-			Completed: mp.Completed,
-			Score:     mp.Score,
-		})
+		mpResp = append(mpResp, moduleProgressResponse(mp, w))
 	}
 	if mpResp == nil {
 		mpResp = []ModuleProgressResponse{}

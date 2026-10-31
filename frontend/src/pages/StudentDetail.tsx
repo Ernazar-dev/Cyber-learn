@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
-import { App, Avatar, Button, Card, Col, Flex, Form, Input, Modal, Popconfirm, Result, Row, Skeleton, Tag, Typography } from "antd";
-import { CheckCircleOutlined, DeleteOutlined, ExperimentOutlined, FormOutlined, KeyOutlined, UserOutlined } from "@ant-design/icons";
+import { App, Avatar, Button, Card, Col, Flex, Form, Input, Modal, Popconfirm, Result, Row, Skeleton, Table, Tag, Typography } from "antd";
+import { CheckCircleOutlined, DeleteOutlined, ExperimentOutlined, FormOutlined, KeyOutlined, SafetyCertificateOutlined, UserOutlined } from "@ant-design/icons";
 import { useAppStore } from "@/store/useAppStore";
 import { ModuleRadarChart } from "@/components/ModuleRadarChart";
 import { LevelTag, PageHeader, StatCard, percent } from "@/components/common";
+import { FuzzyBadge, ReadinessTag, fuzzyValue } from "@/components/FuzzyEvaluation";
 
 const { Text } = Typography;
 
@@ -125,10 +126,42 @@ export default function StudentDetail() {
       </Modal>
 
       <Row gutter={[16, 16]} className="stagger">
-        <Col xs={24} sm={8}><StatCard label="Fuzzy tayyorgarlik" value={percent(student.fuzzyScore)} icon={<ExperimentOutlined />} /></Col>
-        <Col xs={24} sm={8}><StatCard label="Diagnostika testi" value={percent(student.diagnosticScore)} icon={<FormOutlined />} /></Col>
-        <Col xs={24} sm={8}><StatCard label="Tugatilgan modullar" value={`${student.completedModulesCount} ta`} icon={<CheckCircleOutlined />} tone="success" /></Col>
+        <Col xs={24} sm={12} lg={6}><StatCard label="Fuzzy tayyorgarlik" value={percent(student.fuzzyScore)} icon={<ExperimentOutlined />} /></Col>
+        <Col xs={24} sm={12} lg={6}><StatCard label="Diagnostika testi" value={percent(student.diagnosticScore)} icon={<FormOutlined />} /></Col>
+        <Col xs={24} sm={12} lg={6}><StatCard label="Tugatilgan modullar" value={`${student.completedModulesCount} ta`} icon={<CheckCircleOutlined />} tone="success" /></Col>
+        <Col xs={24} sm={12} lg={6}>
+          <StatCard
+            label="Fuzzy yakuniy baho"
+            value={student.finalFuzzy ? fuzzyValue(student.finalFuzzy.score) : "—"}
+            icon={<SafetyCertificateOutlined />}
+            footer={<ReadinessTag readiness={student.finalFuzzy?.readiness} />}
+          />
+        </Col>
       </Row>
+
+      <Card
+        title="Modullar bo'yicha baholash"
+        extra={<Text type="secondary">% — topshiriqlar natijasi, Fuzzy — bilim, xatolar va tezlikdan</Text>}
+      >
+        <Table
+          rowKey="id"
+          size="small"
+          pagination={false}
+          scroll={{ x: 520 }}
+          dataSource={student.moduleProgress}
+          columns={[
+            { title: "Modul", dataIndex: "title" },
+            {
+              title: "Holat",
+              render: (_, m) => m.completed
+                ? <Tag color="success" bordered={false}>Tugatilgan</Tag>
+                : m.unlocked ? <Tag color="processing" bordered={false}>Jarayonda</Tag> : <Tag bordered={false}>Yopiq</Tag>,
+            },
+            { title: "Baho (%)", render: (_, m) => (m.completed && m.score !== undefined ? percent(m.score) : "—") },
+            { title: "Fuzzy-baho", render: (_, m) => <FuzzyBadge score={m.hasFuzzy ? m.fuzzyScore : undefined} readiness={m.readiness} /> },
+          ]}
+        />
+      </Card>
 
       <Card title="Modullar bo'yicha ko'rsatkich" extra={<Text type="secondary">Har bir modul testidan olingan ball</Text>}>
         <ModuleRadarChart moduleProgress={student.moduleProgress} />

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { Button, Card, Col, Empty, Flex, List, Progress, Row, Steps, Tag, Typography } from "antd";
+import { Button, Card, Col, Empty, Flex, List, Progress, Row, Steps, Tag, Tooltip, Typography } from "antd";
 import {
   ArrowRightOutlined, BarChartOutlined, BookOutlined, CheckCircleOutlined, ExperimentOutlined,
   FormOutlined, RiseOutlined, StarOutlined, TeamOutlined,
@@ -8,6 +8,7 @@ import {
 import { useAppStore } from "@/store/useAppStore";
 import { directions, modules } from "@/data/curriculum";
 import { IconTile, LevelTag, PageHeader, SectionTitle, StatCard, percent } from "@/components/common";
+import { ReadinessTag, fuzzyValue } from "@/components/FuzzyEvaluation";
 import { CountUp } from "@/components/motion";
 import { translateLevel } from "@/lib/utils";
 
@@ -130,6 +131,11 @@ function StudentDashboard() {
               <Flex gap={8} align="center" wrap>
                 <span>{modules[m.id]?.title ?? m.title}</span>
                 {m.completed && m.score !== undefined && <Tag color="success" bordered={false}>{percent(m.score)}</Tag>}
+                {m.hasFuzzy && m.fuzzyScore !== undefined && (
+                  <Tooltip title="Fuzzy-baho: bilim, xatolar va tezlikdan">
+                    <Flex gap={4} align="center"><Tag bordered={false}>Fuzzy {fuzzyValue(m.fuzzyScore)}</Tag><ReadinessTag readiness={m.readiness} /></Flex>
+                  </Tooltip>
+                )}
                 {!m.unlocked && <Tag bordered={false}>Yopiq</Tag>}
               </Flex>
             ),

@@ -71,6 +71,9 @@ type ModuleProgress struct {
 	Unlocked  bool    `gorm:"default:false" json:"unlocked"`
 	Completed bool    `gorm:"default:false" json:"completed"`
 	Score     float64 `gorm:"default:0" json:"score"` // quiz score (0-1) from the completion attempt
+	// FuzzyScore — modul bo'yicha fuzzy o'zlashtirish bahosi (topshiriqlar fuzzy baholarining o'rtachasi)
+	FuzzyScore float64 `gorm:"default:0" json:"fuzzyScore"`
+	HasFuzzy   bool    `gorm:"default:false" json:"hasFuzzy"`
 
 	Module Module `gorm:"foreignKey:ModuleID" json:"module,omitempty"`
 }
@@ -147,7 +150,10 @@ type Assignment struct {
 	AssignmentType AssignmentType `gorm:"default:'Nazariy'" json:"assignmentType"`
 	Completed      bool           `gorm:"default:false" json:"completed"`
 	// Score — o'quvchining eng yaxshi natijasi (0..1); modul balli shulardan hisoblanadi
-	Score        float64   `gorm:"default:0" json:"score"`
+	Score float64 `gorm:"default:0" json:"score"`
+	// FuzzyScore — eng yaxshi fuzzy o'zlashtirish bahosi (0..1); Attempts — savollarni yechishlar soni
+	FuzzyScore   float64   `gorm:"default:0" json:"fuzzyScore"`
+	Attempts     int       `gorm:"default:0" json:"attempts"`
 	DateAssigned time.Time `json:"dateAssigned"`
 	// BatchID groups the per-student rows created together for a "hamma
 	// o'quvchilar" (all-students) assignment, so it can be backfilled for

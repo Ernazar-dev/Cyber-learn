@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"cyberai-backend/internal/database"
+	"cyberai-backend/internal/fuzzy"
 	"cyberai-backend/internal/middleware"
 	"cyberai-backend/internal/models"
 
@@ -13,22 +14,24 @@ import (
 )
 
 type StudentResponse struct {
-	ID                      uint                      `json:"id"`
-	Name                    string                    `json:"name"`
-	Username                string                    `json:"username"`
-	HasPassword             bool                      `json:"hasPassword"`
-	Age                     int                       `json:"age"`
-	Role                    models.Role               `json:"role"`
-	DiagnosticScore         float64                   `json:"diagnosticScore"`
-	Level                   models.Level              `json:"level"`
-	FuzzyScore              float64                   `json:"fuzzyScore"`
-	CompletedModulesCount   int                       `json:"completedModulesCount"`
-	Speed                   float64                   `json:"speed"`
-	Errors                  float64                   `json:"errors"`
-	HasCompletedInitialTest bool                      `json:"hasCompletedInitialTest"`
-	HasFuzzyResult          bool                      `json:"hasFuzzyResult"`
-	LastFuzzyResult         *FuzzyResultPublic        `json:"lastFuzzyResult"`
-	ModuleProgress          []ModuleProgressResponse  `json:"moduleProgress"`
+	ID                      uint                     `json:"id"`
+	Name                    string                   `json:"name"`
+	Username                string                   `json:"username"`
+	HasPassword             bool                     `json:"hasPassword"`
+	Age                     int                      `json:"age"`
+	Role                    models.Role              `json:"role"`
+	DiagnosticScore         float64                  `json:"diagnosticScore"`
+	Level                   models.Level             `json:"level"`
+	FuzzyScore              float64                  `json:"fuzzyScore"`
+	CompletedModulesCount   int                      `json:"completedModulesCount"`
+	Speed                   float64                  `json:"speed"`
+	Errors                  float64                  `json:"errors"`
+	HasCompletedInitialTest bool                     `json:"hasCompletedInitialTest"`
+	HasFuzzyResult          bool                     `json:"hasFuzzyResult"`
+	LastFuzzyResult         *FuzzyResultPublic       `json:"lastFuzzyResult"`
+	ModuleProgress          []ModuleProgressResponse `json:"moduleProgress"`
+	// FinalFuzzy — yakuniy fuzzy baho (готов / частично / не готов); hech bir modul baholanmagan bo'lsa null
+	FinalFuzzy *FinalFuzzyResult `json:"finalFuzzy"`
 }
 
 type ModuleProgressResponse struct {
@@ -37,9 +40,29 @@ type ModuleProgressResponse struct {
 	Unlocked  bool    `json:"unlocked"`
 	Completed bool    `json:"completed"`
 	Score     float64 `json:"score"`
+	// Fuzzy o'zlashtirish bahosi (% bilan yonma-yon); HasFuzzy=false — hali yechilmagan
+	FuzzyScore float64         `json:"fuzzyScore"`
+	HasFuzzy   bool            `json:"hasFuzzy"`
+	Readiness  fuzzy.Readiness `json:"readiness,omitempty"`
 }
 
-func buildStudentResponse(u models.User) StudentResponse {
+func moduleProgressResponse(mp models.ModuleProgress, w fuzzy.FuzzyWeightsInput) ModuleProgressResponse {
+	r := ModuleProgressResponse{
+		ID:         mp.ModuleID,
+		Title:      mp.Module.Title,
+		Unlocked:   mp.Unlocked,
+		Completed:  mp.Completed,
+		Score:      mp.Score,
+		FuzzyScore: mp.FuzzyScore,
+		HasFuzzy:   mp.HasFuzzy,
+	}
+	if mp.HasFuzzy {
+		r.Readiness = fuzzy.ReadinessOf(mp.FuzzyScore, w)
+	}
+	return r
+}
+
+func buildStudentResponse(u models.User, w fuzzy.FuzzyWeightsInput) StudentResponse {
 	resp := StudentResponse{
 		ID:                      u.ID,
 		Name:                    u.Name,
@@ -72,14 +95,9 @@ func buildStudentResponse(u models.User) StudentResponse {
 	sort.Slice(progresses, func(i, j int) bool { return progresses[i].ModuleID < progresses[j].ModuleID })
 
 	for _, mp := range progresses {
-		resp.ModuleProgress = append(resp.ModuleProgress, ModuleProgressResponse{
-			ID:        mp.ModuleID,
-			Title:     mp.Module.Title,
-			Unlocked:  mp.Unlocked,
-			Completed: mp.Completed,
-			Score:     mp.Score,
-		})
+		resp.ModuleProgress = append(resp.ModuleProgress, moduleProgressResponse(mp, w))
 	}
+	resp.FinalFuzzy = finalFuzzy(progresses, w)
 	return resp
 }
 
@@ -91,9 +109,10 @@ func GetStudents(c *gin.Context) {
 		Preload("ModuleProgresses.Module").
 		Find(&users)
 
+	w := loadFuzzyWeights()
 	var result []StudentResponse
 	for _, u := range users {
-		result = append(result, buildStudentResponse(u))
+		result = append(result, buildStudentResponse(u, w))
 	}
 	if result == nil {
 		result = []StudentResponse{}
@@ -127,7 +146,7 @@ func GetStudent(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, buildStudentResponse(user))
+	c.JSON(http.StatusOK, buildStudentResponse(user, loadFuzzyWeights()))
 }
 
 // GET /api/students/me/progress — current student's module progress
@@ -137,15 +156,10 @@ func GetMyProgress(c *gin.Context) {
 	var progresses []models.ModuleProgress
 	database.DB.Where("user_id = ?", userID).Preload("Module").Order("module_id asc").Find(&progresses)
 
+	w := loadFuzzyWeights()
 	var result []ModuleProgressResponse
 	for _, mp := range progresses {
-		result = append(result, ModuleProgressResponse{
-			ID:        mp.ModuleID,
-			Title:     mp.Module.Title,
-			Unlocked:  mp.Unlocked,
-			Completed: mp.Completed,
-			Score:     mp.Score,
-		})
+		result = append(result, moduleProgressResponse(mp, w))
 	}
 	if result == nil {
 		result = []ModuleProgressResponse{}

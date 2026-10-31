@@ -167,6 +167,7 @@ func main() {
 			protected.GET("/assignments/:id", handlers.GetAssignment)
 			protected.POST("/assignments", middleware.TeacherOnly(), handlers.CreateAssignment)
 			// Javoblarni cheksiz qayta yuborib to'g'risini "terib" topishni sekinlashtiradi
+			protected.POST("/assignments/:id/start", middleware.RateLimitUser(60, time.Minute), handlers.StartAssignment)
 			protected.POST("/assignments/:id/complete", middleware.RateLimitUser(20, time.Minute), handlers.CompleteAssignment)
 
 			// Analytics
