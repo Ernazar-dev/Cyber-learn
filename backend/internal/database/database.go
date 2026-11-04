@@ -439,13 +439,11 @@ func seed() {
 func seedCTFChallenges() {
 	var ctfCount int64
 	DB.Model(&models.CTFChallenge{}).Count(&ctfCount)
-	if ctfCount > 0 {
-		return
-	}
+	freshSeed := ctfCount == 0
 
 	var modules []models.Module
 	DB.Order("order_index asc").Find(&modules)
-	if len(modules) < 4 {
+	if freshSeed && len(modules) < 4 {
 		return
 	}
 
@@ -459,11 +457,11 @@ func seedCTFChallenges() {
 	}{
 		{
 			title:       "Yashirin xabar",
-			description: "Terminalga tushib qolgan quyidagi qator Base64 formatida kodlangan: `Y3liZXJhaXtoNHNoX25lX3V6dW5fbmVfcWlzcWF9`. Uni dekodlab, ochiq matnni flag sifatida kiriting.",
+			description: "Terminalga tushib qolgan quyidagi qator Base64 formatida kodlangan: `Y3liZXJhaXtiYXNlNjRfc2hpZnJfZW1hc30=`. Uni dekodlab, ochiq matnni flag sifatida kiriting.",
 			difficulty:  models.CTFDifficultyEasy,
 			points:      50,
 			hint:        "Base64 — bu shifrlash emas, kodlash usuli. `base64 -d` buyrug'i yoki onlayn dekoderdan foydalaning.",
-			flag:        "cyberai{h4sh_ne_uzun_ne_qisqa}",
+			flag:        "cyberai{base64_shifr_emas}",
 		},
 		{
 			title:       "Ushlangan paket",
@@ -475,23 +473,41 @@ func seedCTFChallenges() {
 		},
 		{
 			title:       "Qadimiy shifr",
-			description: "Yuliy Tsezar qo'llagan klassik shifr bilan yashiringan xabar: `plorenv{pnrfne_fuvsg_hpu}`. Har bir harf alifboda 13 pozitsiyaga siljitilgan. Asl matnni tiklab, flag sifatida kiriting.",
+			description: "Tsezar shifrining 13 pozitsiyali varianti bilan yashiringan xabar: `plorenv{ebg13_ba_hpu}`. Har bir harf alifboda 13 pozitsiyaga siljitilgan. Asl matnni tiklab, flag sifatida kiriting.",
 			difficulty:  models.CTFDifficultyMedium,
 			points:      75,
 			hint:        "Bu ROT13 — 13 pozitsiyaga siljitilgan Caesar shifri. Uni yana 13 pozitsiyaga siljitsangiz asl matn chiqadi.",
-			flag:        "cyberai{caesar_shift_uch}",
+			flag:        "cyberai{rot13_on_uch}",
 		},
 		{
 			title:       "Konfiguratsiya sizishi",
-			description: "Tizim konfiguratsiya faylidan quyidagi qator topildi: `637962657261697b656e675f6b616d5f68757175717d`. Bu qanday formatda ekanligini aniqlab, flag'ni tiklang.",
+			description: "Tizim konfiguratsiya faylidan quyidagi qator topildi: `59336c695a584a686158746c626d646661324674583268316358567866513d3d`. Qator ikki qavat kodlangan: avval bir formatni, so'ng natijani yana boshqa formatda dekodlash kerak. Flag'ni tiklang.",
 			difficulty:  models.CTFDifficultyHard,
 			points:      100,
-			hint:        "Avvalgi \"Ushlangan paket\" challenge'idagi usul bu yerda ham ishlaydi.",
+			hint:        "Birinchi qatlam hex (\"Ushlangan paket\" kabi). Chiqqan matn oxiridagi `=` belgilari esa ikkinchi qatlam Base64 ekanini bildiradi.",
 			flag:        "cyberai{eng_kam_huquq}",
 		},
 	}
 
 	for i, d := range defaults {
+		if !freshSeed {
+			// Avval seed qilingan topshiriqdagi savol/flag xatosini sarlavha bo'yicha tuzatish
+			var existing models.CTFChallenge
+			if DB.Where("title = ?", d.title).First(&existing).Error != nil {
+				continue
+			}
+			if existing.Description == d.description && existing.Hint == d.hint &&
+				bcrypt.CompareHashAndPassword([]byte(existing.FlagHash), []byte(d.flag)) == nil {
+				continue
+			}
+			hash, err := bcrypt.GenerateFromPassword([]byte(d.flag), bcrypt.DefaultCost)
+			if err != nil {
+				log.Printf("CTF flag hash xatosi: %v", err)
+				continue
+			}
+			DB.Model(&existing).Updates(map[string]any{"description": d.description, "hint": d.hint, "flag_hash": string(hash)})
+			continue
+		}
 		hash, err := bcrypt.GenerateFromPassword([]byte(d.flag), bcrypt.DefaultCost)
 		if err != nil {
 			log.Printf("CTF flag hash xatosi: %v", err)
