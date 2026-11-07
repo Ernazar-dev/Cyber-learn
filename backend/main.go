@@ -134,6 +134,9 @@ func main() {
 			protected.DELETE("/students/:id", middleware.TeacherOnly(), handlers.DeleteStudent)
 			protected.PUT("/students/:id/credentials", middleware.TeacherOnly(), handlers.SetStudentCredentials)
 			protected.GET("/students/me/progress", handlers.GetMyProgress)
+			protected.GET("/students/integrals", middleware.TeacherOnly(), handlers.GetStudentIntegrals)
+			protected.GET("/students/me/integral", handlers.GetMyIntegral)
+			protected.GET("/students/:id/integral", handlers.GetStudentIntegral)
 			protected.GET("/students/:id", handlers.GetStudent)
 
 			// Modules

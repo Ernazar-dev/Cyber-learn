@@ -6,6 +6,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { ModuleRadarChart } from "@/components/ModuleRadarChart";
 import { LevelTag, PageHeader, StatCard, percent } from "@/components/common";
 import { FuzzyBadge, FuzzyNum, ReadinessTag, fuzzyValue } from "@/components/FuzzyEvaluation";
+import { IntegralCard } from "@/components/IntegralCard";
 
 const { Text } = Typography;
 
@@ -138,6 +139,8 @@ export default function StudentDetail() {
           />
         </Col>
       </Row>
+
+      <IntegralCard studentId={student.id} />
 
       <Card
         title="Modullar bo'yicha baholash"

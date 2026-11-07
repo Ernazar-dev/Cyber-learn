@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { App, Avatar, Button, Card, Flex, Grid, Input, Popconfirm, Progress, Result, Space, Table, Tag, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { DeleteOutlined, EyeOutlined, UserOutlined } from "@ant-design/icons";
+import api from "@/lib/api";
 import { useAppStore } from "@/store/useAppStore";
 import type { Student } from "@/store/useAppStore";
 import { LevelTag, PageHeader } from "@/components/common";
@@ -11,13 +13,26 @@ import { RankBadge, getXpRank, rankRange } from "@/components/RankBadge";
 
 const { Text } = Typography;
 
+interface IntegralSummary { studentId: number; evaluated: boolean; k: number; level?: "low" | "mid" | "high" }
+const integralLevel = {
+  low: { label: "Past", color: "error" },
+  mid: { label: "O'rta", color: "warning" },
+  high: { label: "Yuqori", color: "success" },
+} as const;
+
 export default function Students() {
-  const { students, userRole, fetchStudents, deleteStudent } = useAppStore();
+  const { students, userRole, token, fetchStudents, deleteStudent } = useAppStore();
   const [, setLocation] = useLocation();
   const { message } = App.useApp();
   const [query, setQuery] = useState("");
   const screens = Grid.useBreakpoint();
   const mobile = !screens.sm;
+  const { data: integrals } = useQuery({
+    queryKey: ["integrals"],
+    queryFn: () => api.get<IntegralSummary[]>("/api/students/integrals", token),
+    enabled: userRole === "Teacher",
+  });
+  const kOf = new Map((integrals ?? []).map((i) => [i.studentId, i]));
 
   useEffect(() => {
     if (userRole === "Teacher") fetchStudents();
@@ -85,6 +100,22 @@ export default function Students() {
       key: "finalFuzzy",
       sorter: (a, b) => (a.finalFuzzy?.score ?? -1) - (b.finalFuzzy?.score ?? -1),
       render: (_: unknown, s: Student) => <FuzzyBadge score={s.finalFuzzy?.score} readiness={s.finalFuzzy?.readiness} />,
+    },
+    {
+      title: <Tooltip title="Integral kiberxavfsizlik ko'rsatkichi: nazariy, amaliy va vaziyat tahlili natijalaridan">K ko'rsatkich</Tooltip>,
+      key: "integralK",
+      sorter: (a, b) => (kOf.get(a.id)?.k ?? -1) - (kOf.get(b.id)?.k ?? -1),
+      render: (_: unknown, s: Student) => {
+        const i = kOf.get(s.id);
+        if (!i?.evaluated || !i.level) return <Text type="secondary">—</Text>;
+        const m = integralLevel[i.level];
+        return (
+          <Flex align="center" gap={6}>
+            <Text strong>{i.k.toFixed(1)}%</Text>
+            <Tag color={m.color} bordered={false} style={{ marginInlineEnd: 0 }}>{m.label}</Tag>
+          </Flex>
+        );
+      },
     },
     {
       title: "Modullar",

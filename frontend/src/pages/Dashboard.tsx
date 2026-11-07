@@ -8,7 +8,8 @@ import {
 import { useAppStore } from "@/store/useAppStore";
 import { directions, modules } from "@/data/curriculum";
 import { IconTile, LevelTag, PageHeader, SectionTitle, StatCard, percent } from "@/components/common";
-import { ReadinessTag, fuzzyValue } from "@/components/FuzzyEvaluation";
+import { FuzzyNum, ReadinessTag, fuzzyValue } from "@/components/FuzzyEvaluation";
+import { IntegralCard } from "@/components/IntegralCard";
 import { CountUp } from "@/components/motion";
 import { translateLevel } from "@/lib/utils";
 
@@ -118,6 +119,8 @@ function StudentDashboard() {
         </Col>
       </Row>
 
+      <IntegralCard />
+
       <Card
         title={direction.title}
         extra={<Button type="link" onClick={() => setLocation(base)}>Yo'nalishni ochish</Button>}
@@ -183,7 +186,7 @@ function TeacherDashboard() {
 
       <Row gutter={[16, 16]}>
         <Col xs={12} lg={6}><StatCard label="O'quvchilar" count={{ value: students.length }} icon={<TeamOutlined />} /></Col>
-        <Col xs={12} lg={6}><StatCard label="O'rtacha fuzzy bahosi" count={{ value: Math.round(avg * 100), suffix: "%" }} icon={<StarOutlined />} /></Col>
+        <Col xs={12} lg={6}><StatCard label="O'rtacha fuzzy bahosi" value={<><CountUp value={Math.round(avg * 100)} suffix="%" /><FuzzyNum score={avg} size={16} /></>} icon={<StarOutlined />} /></Col>
         <Col xs={12} lg={6}><StatCard label="Jami topshiriqlar" count={{ value: assignments.length }} icon={<BookOutlined />} /></Col>
         <Col xs={12} lg={6}><StatCard label="Kutilmoqda" count={{ value: pending }} icon={<FormOutlined />} tone="warning" /></Col>
       </Row>
